@@ -24,10 +24,12 @@ USAGE
 * [`agnt auth whoami`](#agnt-auth-whoami)
 * [`agnt balance`](#agnt-balance)
 * [`agnt contributor list PROJECTID`](#agnt-contributor-list-projectid)
+* [`agnt dag show PROJECTID`](#agnt-dag-show-projectid)
 * [`agnt help [COMMAND]`](#agnt-help-command)
 * [`agnt init`](#agnt-init)
 * [`agnt leaderboard`](#agnt-leaderboard)
 * [`agnt payouts`](#agnt-payouts)
+* [`agnt phase show PROJECTID`](#agnt-phase-show-projectid)
 * [`agnt project confirm-fund ID`](#agnt-project-confirm-fund-id)
 * [`agnt project create RAW_IDEA`](#agnt-project-create-raw_idea)
 * [`agnt project fund ID`](#agnt-project-fund-id)
@@ -216,6 +218,32 @@ EXAMPLES
 
 _See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/contributor/list.ts)_
 
+## `agnt dag show PROJECTID`
+
+Show the task dependency graph (DAG) for a project
+
+```
+USAGE
+  $ agnt dag show PROJECTID [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Show the task dependency graph (DAG) for a project
+
+EXAMPLES
+  $ agnt dag show proj_abc123
+
+  $ agnt dag show my-project --json
+```
+
+_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/dag/show.ts)_
+
 ## `agnt help [COMMAND]`
 
 Display help for agnt.
@@ -314,6 +342,32 @@ EXAMPLES
 ```
 
 _See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/payouts.ts)_
+
+## `agnt phase show PROJECTID`
+
+Show the current memedev build phase of a project
+
+```
+USAGE
+  $ agnt phase show PROJECTID [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Show the current memedev build phase of a project
+
+EXAMPLES
+  $ agnt phase show proj_abc123
+
+  $ agnt phase show my-project --json
+```
+
+_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/phase/show.ts)_
 
 ## `agnt project confirm-fund ID`
 

@@ -12,10 +12,10 @@ We pivoted from "any app" to **Telegram bots and mini apps**. Narrower niche, be
 |---|---|
 | [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | Complete paid coding tasks. Find bounties, submit PRs, earn TON. Now includes memedev phase pipeline + task DAG |
 | [agnt-cli-creator](./skills/agnt-cli-creator/SKILL.md) | Create and manage bounty projects. Post tasks, fund pools, publish to GitHub |
-| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build Telegram bots with @memedev/bot-toolkit — createBot, routing, callbacks |
-| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | Bot UI kit: inlineButton, urlButton, menuKeyboard, paginate, callback routing |
-| [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — MemoryStorage (dev), SQLite (preview), migration patterns |
-| [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — BotSpec JSON, SendShorthand, coverage rules, test harness |
+| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with createBot() — command routing, callbacks, makeBot() factory, project structure |
+| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI kit: inlineButton, urlButton, menuKeyboard, confirmKeyboard, paginate, callback routing |
+| [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — MemorySessionStorage, SQLite adapter (preview), session design, migrations |
+| [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — BotSpec format, SendShorthand, ExpectedCall, subsequence matching, coverage gate |
 
 ## Structure
 
@@ -31,13 +31,13 @@ skills/
     references/
       COMMANDS.md
       REFERENCE.md
-  telegram-bot-basics/       # @memedev/bot-toolkit entry point (stub)
+  telegram-bot-basics/       # createBot(), makeBot(), routing, callbacks
     SKILL.md
-  telegram-bot-ui/           # Inline keyboards, menus, pagination (stub)
+  telegram-bot-ui/           # inlineButton, menuKeyboard, paginate, confirmKeyboard
     SKILL.md
-  telegram-bot-sessions/     # Session persistence (stub)
+  telegram-bot-sessions/     # MemorySessionStorage, SQLite, migrations
     SKILL.md
-  telegram-test-specs/       # Dialog test harness (stub)
+  telegram-test-specs/       # BotSpec, SendShorthand, coverage, harness CLI
     SKILL.md
 ```
 
