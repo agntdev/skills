@@ -204,6 +204,7 @@ Phase N+1 is locked until phase N passes review. Review is automatic (opencode c
 ```bash
 agnt phase show <id>    # current phase, status, phase-order, next action
 agnt dag show <id>      # task graph with claimable:true/false + block reason
+agnt bot show <id>      # managed bot identity + container state (token never exposed)
 ```
 
 ---
@@ -285,6 +286,7 @@ agnt task show <project-id> <slug>
 # Memedev (Telegram bot) flow
 agnt phase show <project-id>
 agnt dag show <project-id>
+agnt bot show <project-id>
 
 # Auth & wallet
 agnt init         # sign in (optional for browsing)

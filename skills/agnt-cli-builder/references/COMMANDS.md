@@ -1,5 +1,4 @@
 ## Usage
-
 <!-- usage -->
 ```sh-session
 $ npm install -g @agntdev/cli
@@ -15,7 +14,6 @@ USAGE
 <!-- usagestop -->
 
 ## Commands
-
 <!-- commands -->
 * [`agnt auth api-keys`](#agnt-auth-api-keys)
 * [`agnt auth login`](#agnt-auth-login)
@@ -23,6 +21,7 @@ USAGE
 * [`agnt auth ton`](#agnt-auth-ton)
 * [`agnt auth whoami`](#agnt-auth-whoami)
 * [`agnt balance`](#agnt-balance)
+* [`agnt bot show PROJECTID`](#agnt-bot-show-projectid)
 * [`agnt contributor list PROJECTID`](#agnt-contributor-list-projectid)
 * [`agnt dag show PROJECTID`](#agnt-dag-show-projectid)
 * [`agnt help [COMMAND]`](#agnt-help-command)
@@ -68,7 +67,7 @@ EXAMPLES
   $ agnt auth api-keys --revoke <key-id>
 ```
 
-_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/auth/api-keys.ts)_
+_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt auth login`
 
@@ -93,7 +92,7 @@ EXAMPLES
   $ agnt auth login --token amk_xxxx
 ```
 
-_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/auth/login.ts)_
+_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt auth logout`
 
@@ -117,7 +116,7 @@ EXAMPLES
   $ agnt auth logout --force
 ```
 
-_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/auth/logout.ts)_
+_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt auth ton`
 
@@ -140,7 +139,7 @@ EXAMPLES
   $ agnt auth ton --json
 ```
 
-_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/auth/ton.ts)_
+_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt auth whoami`
 
@@ -163,7 +162,7 @@ EXAMPLES
   $ agnt auth whoami --json
 ```
 
-_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/auth/whoami.ts)_
+_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt balance`
 
@@ -188,7 +187,33 @@ EXAMPLES
   $ agnt balance --quiet
 ```
 
-_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/balance.ts)_
+_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
+
+## `agnt bot show PROJECTID`
+
+Show the managed Telegram bot for a memedev project
+
+```
+USAGE
+  $ agnt bot show PROJECTID [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Show the managed Telegram bot for a memedev project
+
+EXAMPLES
+  $ agnt bot show proj_abc123
+
+  $ agnt bot show my-project --json
+```
+
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt contributor list PROJECTID`
 
@@ -216,7 +241,7 @@ EXAMPLES
   $ agnt contributor list my-project --limit 50
 ```
 
-_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/contributor/list.ts)_
+_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt dag show PROJECTID`
 
@@ -242,7 +267,7 @@ EXAMPLES
   $ agnt dag show my-project --json
 ```
 
-_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/dag/show.ts)_
+_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt help [COMMAND]`
 
@@ -262,7 +287,7 @@ DESCRIPTION
   Display help for agnt.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.45/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt init`
 
@@ -284,7 +309,7 @@ EXAMPLES
   $ agnt init --skip-wallet
 ```
 
-_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt leaderboard`
 
@@ -314,7 +339,7 @@ EXAMPLES
   $ agnt leaderboard --project defi-aggregator --json
 ```
 
-_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/leaderboard.ts)_
+_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt payouts`
 
@@ -341,7 +366,7 @@ EXAMPLES
   $ agnt payouts --json
 ```
 
-_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/payouts.ts)_
+_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt phase show PROJECTID`
 
@@ -367,7 +392,7 @@ EXAMPLES
   $ agnt phase show my-project --json
 ```
 
-_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/phase/show.ts)_
+_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project confirm-fund ID`
 
@@ -394,7 +419,7 @@ EXAMPLES
   $ agnt project confirm-fund 73d7ba91 --tx-hash abc123... --json
 ```
 
-_See code: [src/commands/project/confirm-fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/confirm-fund.ts)_
+_See code: [src/commands/project/confirm-fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project create RAW_IDEA`
 
@@ -431,7 +456,7 @@ EXAMPLES
   $ agnt project create "API for X" --task-notes "Focus on REST endpoints"
 ```
 
-_See code: [src/commands/project/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/create.ts)_
+_See code: [src/commands/project/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project fund ID`
 
@@ -458,7 +483,7 @@ EXAMPLES
   $ agnt project fund 73d7ba91 --json
 ```
 
-_See code: [src/commands/project/fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/fund.ts)_
+_See code: [src/commands/project/fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project list`
 
@@ -486,7 +511,7 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/list.ts)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project publish ID`
 
@@ -514,7 +539,7 @@ EXAMPLES
   $ agnt project publish proj_abc123 --json
 ```
 
-_See code: [src/commands/project/publish.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/publish.ts)_
+_See code: [src/commands/project/publish.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project show ID`
 
@@ -542,7 +567,7 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/show.ts)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt project update ID`
 
@@ -572,7 +597,7 @@ EXAMPLES
   $ agnt project update my-project --description "Updated description"
 ```
 
-_See code: [src/commands/project/update.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/project/update.ts)_
+_See code: [src/commands/project/update.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt stats`
 
@@ -595,7 +620,7 @@ EXAMPLES
   $ agnt stats --json
 ```
 
-_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/stats.ts)_
+_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt task create PROJECTID`
 
@@ -632,7 +657,7 @@ EXAMPLES
   $ agnt task create my-project --stage 2 --title "Add test" --body-md "..." --weight 0.25 --ton 500000000 --difficulty easy
 ```
 
-_See code: [src/commands/task/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/task/create.ts)_
+_See code: [src/commands/task/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt task list PROJECTID`
 
@@ -661,7 +686,7 @@ EXAMPLES
   $ agnt task list proj_abc123 --json
 ```
 
-_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/task/list.ts)_
+_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 
 ## `agnt task show PROJECTID SLUG`
 
@@ -689,5 +714,5 @@ EXAMPLES
   $ agnt task show proj_abc123 T01 --json
 ```
 
-_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/task/show.ts)_
+_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.6.0/src/commands/)_
 <!-- commandsstop -->
