@@ -2,15 +2,15 @@
 name: telegram-bot-basics
 description: >
   Use when building a Telegram bot. Covers how Telegram Bot API works (HTTP),
-  how grammY wraps it, and how @memedev/bot-toolkit adds harness compatibility.
+  how grammY wraps it, and how @agntdev/bot-toolkit adds harness compatibility.
   Triggers: build telegram bot, create telegram bot, grammY bot, bot entry point.
-compatibility: Works with grammY alone, or @memedev/bot-toolkit for testable bots.
+compatibility: Works with grammY alone, or @agntdev/bot-toolkit for testable bots.
 license: MIT
 ---
 
 # telegram-bot-basics Skill
 
-How to build a Telegram bot — from raw Bot API to grammY to the memedev toolkit.
+How to build a Telegram bot — from raw Bot API to grammY to the agntdev toolkit.
 
 ---
 
@@ -168,7 +168,7 @@ Without `.catch()`, unhandled errors crash the polling loop.
 
 ---
 
-## 3. @memedev/bot-toolkit — The Wrapper
+## 3. @agntdev/bot-toolkit — The Wrapper
 
 The toolkit wraps grammY with **opinionated defaults** that make bots testable via the tokenless harness.
 
@@ -181,7 +181,7 @@ bot.use(session({ initial: () => ({}) }));
 bot.catch(console.error);
 
 // Toolkit (same thing, one call):
-import { createBot, type BotContext } from "@memedev/bot-toolkit";
+import { createBot, type BotContext } from "@agntdev/bot-toolkit";
 
 interface Session {
   step: string;
@@ -204,7 +204,7 @@ What `createBot` wires automatically:
 ### BotContext type
 
 ```ts
-import type { BotContext } from "@memedev/bot-toolkit";
+import type { BotContext } from "@agntdev/bot-toolkit";
 
 // BotContext<S> = grammY Context & SessionFlavor<S>
 bot.command("count", async (ctx: BotContext<Session>) => {
@@ -219,7 +219,7 @@ bot.command("count", async (ctx: BotContext<Session>) => {
 
 ```ts
 // src/index.ts
-import { createBot } from "@memedev/bot-toolkit";
+import { createBot } from "@agntdev/bot-toolkit";
 
 export function makeBot() {
   const bot = createBot<Session>(process.env.BOT_TOKEN!, {

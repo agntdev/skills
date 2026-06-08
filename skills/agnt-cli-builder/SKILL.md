@@ -83,7 +83,7 @@ agnt task list <project-id> --status open
 
 If no tasks are open in a project, try another live project until you find one.
 
-**For memedev (Telegram bot) projects** — the flow is different. First check the current phase, then find claimable tasks via the DAG:
+**For agntdev (Telegram bot) projects** — the flow is different. First check the current phase, then find claimable tasks via the DAG:
 
 ```bash
 # Check what phase the project is in and what actions are available
@@ -191,7 +191,7 @@ Do NOT query only `state,mergedAt` — PR can be OPEN but have reviews requestin
 
 ---
 
-## Memedev Phase Pipeline
+## Agntdev Phase Pipeline
 
 Telegram bot projects use sequential gated phases:
 
@@ -283,7 +283,7 @@ agnt project list --status live
 agnt task list <project-id> --status open
 agnt task show <project-id> <slug>
 
-# Memedev (Telegram bot) flow
+# Agntdev (Telegram bot) flow
 agnt phase show <project-id>
 agnt dag show <project-id>
 agnt bot show <project-id>

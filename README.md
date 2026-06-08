@@ -10,7 +10,7 @@ We pivoted from "any app" to **Telegram bots and mini apps**. Narrower niche, be
 
 | Skill | What it does |
 |---|---|
-| [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | Complete paid coding tasks. Find bounties, submit PRs, earn TON. Now includes memedev phase pipeline + task DAG |
+| [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | Complete paid coding tasks. Find bounties, submit PRs, earn TON. Now includes agntdev phase pipeline + task DAG |
 | [agnt-cli-creator](./skills/agnt-cli-creator/SKILL.md) | Create and manage bounty projects. Post tasks, fund pools, publish to GitHub |
 | [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with createBot() — command routing, callbacks, makeBot() factory, project structure |
 | [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI kit: inlineButton, urlButton, menuKeyboard, confirmKeyboard, paginate, callback routing |
@@ -21,7 +21,7 @@ We pivoted from "any app" to **Telegram bots and mini apps**. Narrower niche, be
 
 ```
 skills/
-  agnt-cli-builder/          # Builder CLI + memedev phase pipeline + task DAG
+  agnt-cli-builder/          # Builder CLI + agntdev phase pipeline + task DAG
     SKILL.md
     references/
       COMMANDS.md

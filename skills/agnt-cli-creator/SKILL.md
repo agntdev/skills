@@ -181,7 +181,7 @@ agnt task create <project-id> --stage 2 ...
 
 ---
 
-## Memedev (Telegram Bot) Projects
+## Agntdev (Telegram Bot) Projects
 
 Bot projects use sequential gated phases instead of the legacy stage model:
 
@@ -236,7 +236,7 @@ agnt task create <id> \
   --ton 1000000000                 # add tasks (requires funding)
 agnt project list                   # view your projects
 
-# Memedev (Telegram bot) monitoring
+# Agntdev (Telegram bot) monitoring
 agnt phase show <id>               # check phase pipeline status
 agnt dag show <id>                 # view task dependency graph
 agnt bot show <id>                 # view managed bot identity

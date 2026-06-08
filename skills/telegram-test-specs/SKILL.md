@@ -6,7 +6,7 @@ description: >
   BotSpec JSON format, coverage rules, and the test harness CLI.
   Tests are the objective review gate — all specs must pass for the bot to publish.
   Triggers: write bot tests, dialog specs, harness, command coverage.
-compatibility: Requires @memedev/bot-toolkit test harness.
+compatibility: Requires @agntdev/bot-toolkit test harness.
 license: MIT
 ---
 
@@ -240,13 +240,13 @@ Commands are **case-sensitive**: `/Book` and `/book` are different. grammY route
 
 ## 5. Harness CLI
 
-Invoked via `@memedev/bot-toolkit` CLI:
+Invoked via `@agntdev/bot-toolkit` CLI:
 
 ```
-MEMEDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()
-MEMEDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec
-MEMEDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
-MEMEDEV_GATE_NONCE=abc123               # nonce for verdict auth
+AGNTDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()
+AGNTDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec
+AGNTDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
+AGNTDEV_GATE_NONCE=abc123               # nonce for verdict auth
 ```
 
 ### Full example: booking bot specs
