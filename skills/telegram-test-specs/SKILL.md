@@ -1,10 +1,10 @@
 ---
 name: telegram-test-specs
 description: >
-  Use when writing dialog test specs for a memedev bot.
-  Covers BotSpec JSON format, SendShorthand, ExpectedCall,
-  ordered-subsequence matching, command coverage rules, and the test harness CLI.
-  Tests are the objective review gate — they must pass for the bot to publish.
+  Use when writing dialog test specs for a Telegram bot. Covers why tokenless
+  testing exists, how the harness replays Updates and captures API calls,
+  BotSpec JSON format, coverage rules, and the test harness CLI.
+  Tests are the objective review gate — all specs must pass for the bot to publish.
   Triggers: write bot tests, dialog specs, harness, command coverage.
 compatibility: Requires @memedev/bot-toolkit test harness.
 license: MIT
@@ -12,15 +12,113 @@ license: MIT
 
 # telegram-test-specs Skill
 
-How to write dialog test specs for a memedev bot. Tests are the objective review gate — all specs must pass AND every declared command must have >= 1 meaningful spec for the bot to publish.
+How to write dialog test specs for a Telegram bot — why tokenless testing, how the harness works, and the spec format.
 
-## BotSpec format
+---
 
-A spec file (`tests/specs/<name>.json`) is a JSON object:
+## 1. Why Tokenless Testing
+
+Testing a Telegram bot normally requires a **real bot token** and network calls to `api.telegram.org`. This means:
+
+- Need BotFather token per test
+- Tests hit real API (slow, rate-limited)
+- Can't run in CI without secrets
+- Hard to assert exact API calls
+
+### The harness approach
+
+Instead of calling Telegram's API, the harness:
+1. Builds your bot **in-process** (just imports `makeBot()`)
+2. Feeds it **synthetic Updates** (no network)
+3. **Captures** every outgoing API call the bot tries to make
+4. **Compares** captured calls against expected calls
+
+```
+BotSpec JSON  →  harness feeds synthetic Updates  →  bot handles them  →  captures API calls  →  compares vs expected
+```
+
+No Telegram. No token. No network. Runs anywhere. Deterministic.
+
+### Gate verdict
+
+The harness emits ONE machine-readable line on stdout:
+
+```
+GATE:<nonce>:{"ok":true,"total":3,"passed":3,"failed":0,"coverage":{...},"results":[...]}
+```
+
+- `ok: true` → all specs pass AND all declared commands covered
+- Exit code `0` always (verdict is in JSON; non-zero = harness crashed)
+- Nonce authenticates the verdict (bot code can't forge it)
+
+---
+
+## 2. How the Harness Works
+
+### Bot factory
+
+Harness imports your `makeBot()` and calls it fresh per spec:
+
+```ts
+import { makeBot } from "./src/index";
+
+// Harness does this internally for each spec:
+const bot = makeBot();  // fresh bot, fresh session, fresh state
+```
+
+### Capture transformer
+
+The harness installs a grammY **transformer** that intercepts every outgoing API call:
+
+```ts
+bot.api.config.use(async (prev, method, payload) => {
+  // Instead of calling api.telegram.org:
+  calls.push({ method, payload });       // record it
+  return { ok: true, result: stub };     // return fake success
+});
+```
+
+This means `ctx.reply("Hi")`, `ctx.editMessageText(...)`, `ctx.answerCallbackQuery()` — all get captured, none hit the network.
+
+### Fake botInfo
+
+grammY normally calls `getMe` on startup. The harness skips this:
+
+```ts
+bot.botInfo = { id: 1, is_bot: true, first_name: "TestBot", username: "test_bot", ... };
+```
+
+### Synthetic Updates
+
+The harness builds grammY-compatible Update objects from your spec:
+
+```ts
+// { "send": { "text": "/start" } } becomes:
+{
+  update_id: 1,
+  message: {
+    message_id: 1,
+    chat: { id: 1, type: "private" },
+    from: { id: 1, first_name: "User" },
+    text: "/start",
+    entities: [{ type: "bot_command", offset: 0, length: 6 }]
+  }
+}
+```
+
+- `/command` text auto-gets `bot_command` entity → grammY command router matches
+- `chatId` defaults to `1`, `userId` to `1`
+- Callback queries include original message → `editMessageText` works
+
+---
+
+## 3. BotSpec Format
+
+A spec file is a JSON object describing a dialog:
 
 ```json
 {
-  "name": "start command shows welcome",
+  "name": "start command greets user",
   "strict": false,
   "steps": [
     {
@@ -37,69 +135,56 @@ A spec file (`tests/specs/<name>.json`) is a JSON object:
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `name` | `string` | yes | Unique human-readable name |
-| `strict` | `boolean` | no | Default `false`. If `true`, exact call count + positional match |
-| `steps` | `SpecStep[]` | yes | Ordered sequence of user actions + expected bot responses |
+| `name` | `string` | yes | Unique, human-readable |
+| `strict` | `boolean` | no | Default `false` |
+| `steps` | `SpecStep[]` | yes | Ordered user actions + expected responses |
 
----
-
-## SpecStep
-
-Each step has a `send` (what the user does) and `expect` (what the bot should respond).
-
-### SendShorthand
+### SpecStep — send (what user does)
 
 Three variants:
 
 ```jsonc
-// 1. Text message (commands auto-detect, get bot_command entity)
+// 1. Text message
 { "send": { "text": "/start" } }
+
+// 2. Text with specific chat/user
 { "send": { "text": "/book", "chatId": 42, "userId": 99 } }
 
-// 2. Callback button tap
+// 3. Callback button tap
 { "send": { "callback": "menu:book", "messageId": 100 } }
 
-// 3. Raw grammY Update (advanced)
-{ "send": { "update": { ... } } }
+// 4. Raw Update object (advanced)
+{ "send": { "update": { "update_id": 1, "message": {...} } } }
 ```
 
-- `chatId` defaults to `1`, `userId` defaults to `1`
-- `/command` text automatically gets a `bot_command` entity added so grammY's command router matches
-- Callback queries include the original message so handlers can `editMessageText`
-
-### ExpectedCall
+### SpecStep — expect (what bot should reply)
 
 ```jsonc
+// Assert method was called with specific payload (deep-subset match)
 { "method": "sendMessage", "payload": { "text": "Welcome!" } }
-{ "method": "editMessageText" }  // payload omitted → only assert method was called
+
+// Assert method was called, any payload
+{ "method": "editMessageText" }
+
+// Assert method was called (no payload check)
 { "method": "answerCallbackQuery" }
 ```
 
-- `payload` is matched as a **deep subset** — you assert `text` without pinning `chat_id`, `message_id`, etc.
-- Omit `payload` entirely to only assert the method was called
-- Common methods: `sendMessage`, `editMessageText`, `editMessageReplyMarkup`, `answerCallbackQuery`, `sendPhoto`
+**Deep-subset matching:** `payload: { text: "Welcome!" }` matches `{ chat_id: 1, text: "Welcome!", ... }`. You assert what you care about without pinning auto-filled fields like `chat_id`, `message_id`, `parse_mode`.
 
----
+### Matching modes
 
-## Matching modes
-
-### Subsequence (default, `strict: false`)
-
-Every expected call must appear **in order**, but **incidental extra calls are allowed**. Example: a handler that calls both `answerCallbackQuery` (incidental) and `editMessageText`:
+**Subsequence (default, `strict: false`):** Every expected call must appear **in order**, but **extra calls are allowed**.
 
 ```json
 {
   "send": { "callback": "menu:next" },
-  "expect": [
-    { "method": "editMessageText", "payload": { "text": "Page 2" } }
-  ]
+  "expect": [{ "method": "editMessageText" }]
 }
-// pass — answerCallbackQuery happened but wasn't required
+// pass — answerCallbackQuery fired too, but was incidental
 ```
 
-### Strict (`strict: true`)
-
-Exact call count + positional match. Use when "and nothing else" matters:
+**Strict (`strict: true`):** Exact count + positional match. Use when "and nothing else" matters.
 
 ```json
 {
@@ -110,58 +195,35 @@ Exact call count + positional match. Use when "and nothing else" matters:
     ] }
   ]
 }
-// fail — answerCallbackQuery occurred but wasn't in expect[]
+// fail — answerCallbackQuery fired but wasn't in expect[]
 ```
 
-**Recommendation:** Use subsequence (default) for most specs. Use strict only for targeted assertions.
+Recommendation: subsequence for most specs, strict only for targeted assertions.
 
 ---
 
-## Command coverage rules
+## 4. Command Coverage Rules
 
-The Tests gate checks: **every command in the Details state-machine must have >= 1 meaningful spec exercising it.**
+The gate checks: **every declared command must have >= 1 meaningful spec exercising it.**
 
 A spec is "meaningful" for a command when:
 1. The `send` step contains a `/command` text
-2. That step's `expect[]` has >= 1 entry (it actually asserts something)
+2. That step's `expect[]` has >= 1 entry
 
 ```jsonc
-// Counts toward coverage:
+// ✅ Counts toward /book coverage:
 { "send": { "text": "/book" }, "expect": [{ "method": "sendMessage" }] }
 
-// Does NOT count (empty expect — no assertion):
+// ❌ Does NOT count (empty expect — no assertion):
 { "send": { "text": "/book" }, "expect": [] }
 
-// Does NOT count (not a command):
+// ❌ Does NOT count (not a command — no bot_command entity added):
 { "send": { "text": "hello" }, "expect": [{ "method": "sendMessage" }] }
 ```
 
-Commands are **case-sensitive**: `/Book` and `/book` are different commands. GrammY routes them separately.
+Commands are **case-sensitive**: `/Book` and `/book` are different. grammY routes them separately, coverage tracks them separately.
 
----
-
-## Test harness CLI
-
-The harness is invoked via `@memedev/bot-toolkit` CLI with env vars:
-
-```
-MEMEDEV_BOT_MODULE=./src/index.ts      # path to module exporting makeBot()
-MEMEDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec
-MEMEDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
-MEMEDEV_GATE_NONCE=abc123               # nonce for gate verdict auth
-```
-
-### Gate verdict (stdout)
-
-```
-GATE:<nonce>:{"ok":true|false,"total":N,"passed":N,"failed":N,"coverage":{...},"results":[{name,ok}...]}
-```
-
-- `ok: true` — all specs green AND all declared commands covered
-- `ok: false` — at least one spec failed OR a command has no meaningful coverage
-- Exit code `0` always (verdict is in JSON; non-zero means harness itself broke)
-
-### Coverage report
+**Coverage report (from GATE verdict):**
 
 ```json
 {
@@ -172,11 +234,22 @@ GATE:<nonce>:{"ok":true|false,"total":N,"passed":N,"failed":N,"coverage":{...},"
 }
 ```
 
-- `fraction: 1` required for gate to pass (unless no commands declared → 1 automatically)
+`fraction: 1` required for gate pass (unless no commands declared → 1 automatically).
 
 ---
 
-## Example: full booking bot spec
+## 5. Harness CLI
+
+Invoked via `@memedev/bot-toolkit` CLI:
+
+```
+MEMEDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()
+MEMEDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec
+MEMEDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
+MEMEDEV_GATE_NONCE=abc123               # nonce for verdict auth
+```
+
+### Full example: booking bot specs
 
 ```json
 [
@@ -206,11 +279,24 @@ GATE:<nonce>:{"ok":true|false,"total":N,"passed":N,"failed":N,"coverage":{...},"
 
 ---
 
+## Quick Reference
+
+| Concept | Implementation |
+|---|---|
+| Bot factory | `export function makeBot()` — fresh bot per spec |
+| No network | Capture transformer + fake botInfo |
+| Synthetic input | `{ text: "/cmd" }`, `{ callback: "data" }`, `{ update: {...} }` |
+| Expected output | `{ method: "sendMessage", payload: { text: "Hi" } }` (deep subset) |
+| Verdict | `GATE:<nonce>:{"ok":bool, ...}` on stdout |
+| Coverage | Every declared command needs >= 1 non-empty expect spec |
+
+---
+
 ## Common mistakes
 
-1. **Empty `expect[]` on a command send** — inflates coverage but asserts nothing. Harness rejects it for coverage counting.
-2. **Forgetting `answerCallbackQuery`** — tests with subsequence matching still pass (it's incidental), but production users see stuck spinner.
-3. **`strict: true` without accounting for incidental calls** — almost every callback handler fires `answerCallbackQuery`. Include it in expect if using strict mode.
+1. **Empty `expect[]` on command send** — inflates coverage but asserts nothing. Harness rejects it.
+2. **Forgetting `answerCallbackQuery`** — subsequence matching hides this, but real users see stuck spinner.
+3. **`strict: true` without including incidental calls** — almost every callback handler fires `answerCallbackQuery`. Include it in expect if strict.
 4. **Relying on session across specs** — harness creates fresh bot per spec. Session starts from `initial()` each time.
-5. **Not declaring all commands** — the coverage gate checks the declared list. A command handler with no spec fails the gate.
-6. **Case mismatch** — `/Book` declared but spec sends `/book` → coverage check treats them as different commands.
+5. **Not declaring all commands** — coverage gate uses the declared list. Handler without spec = gate fails.
+6. **Case mismatch** — `/Book` declared, spec sends `/book` → different commands in coverage.

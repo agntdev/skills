@@ -1,55 +1,172 @@
 ---
 name: telegram-bot-sessions
 description: >
-  Use when implementing user session persistence in a memedev bot.
-  Covers MemorySessionStorage (dev/harness), SQLite adapter (preview),
-  session shape design, and migration patterns.
-  Triggers: session, persistence, bot state, SQLite bot.
-compatibility: Requires @memedev/bot-toolkit.
+  Use when implementing user session persistence in a Telegram bot.
+  Covers Bot API's stateless nature, grammY session plugin + StorageAdapter,
+  and @memedev/bot-toolkit MemorySessionStorage + harness isolation.
+  Triggers: session, persistence, bot state, user state, conversation flow.
+compatibility: Works with grammY sessions alone, or @memedev/bot-toolkit for defaults.
 license: MIT
 ---
 
 # telegram-bot-sessions Skill
 
-How to implement user session persistence in a memedev bot.
+How to persist user state in a Telegram bot — why it's needed, how grammY solves it, how the toolkit wraps it.
 
-## MemorySessionStorage (default)
+---
 
-`createBot()` defaults to `MemorySessionStorage` — an in-memory grammY `StorageAdapter`. Good for development and test harness. Resets on restart.
+## 1. Why Sessions Are Needed (Bot API)
+
+Telegram Bot API is **stateless**. Every Update arrives as a fresh HTTP request. The bot has no built-in memory of what a user did before.
+
+```
+User: "I want to book"
+Bot:  "What service?"
+User: "Haircut"
+Bot:  "When?"
+User:  "Tomorrow 2pm"
+Bot:  "Booked!"
+```
+
+Without state, the bot can't know that "Haircut" answers the "What service?" question vs being a random message. It has no memory of the conversation step.
+
+### How Bot API handles it — there is no built-in mechanism
+
+Bot API just delivers Updates. It's up to the bot to:
+1. Remember who is at what step
+2. Store partial data between messages
+3. Clear state when a flow completes
+
+**Option: Database.** Write user state to SQLite/Redis on every message. Works but adds latency + complexity.
+
+**Option: In-memory Map.** Fast but lost on restart. Fine for dev, bad for production.
+
+**Option: grammY sessions.** The framework abstracts this away.
+
+---
+
+## 2. grammY Sessions — The Framework Solution
+
+grammY provides a `session()` plugin that stores per-chat state and makes it available as `ctx.session`.
+
+### Basic setup
+
+```ts
+import { Bot, session } from "grammy";
+
+interface SessionData {
+  step: string;
+  service?: string;
+}
+
+const bot = new Bot(token);
+
+bot.use(session({
+  initial: (): SessionData => ({ step: "idle" }),
+  // storage: ...  // defaults to in-memory Map
+}));
+
+bot.command("book", async (ctx) => {
+  ctx.session.step = "choosing_service";
+  await ctx.reply("What service?");
+});
+
+bot.on("message:text", async (ctx) => {
+  if (ctx.session.step === "choosing_service") {
+    ctx.session.service = ctx.message.text;
+    ctx.session.step = "choosing_time";
+    await ctx.reply("What time?");
+  }
+});
+```
+
+### Session key
+
+grammY keys sessions by `chatId_userId` (`"12345_67890"`). This means:
+- **Private chats:** one session per user (chat and user are the same person)
+- **Group chats:** one session shared by all users in the chat
+- Session is per-chat, not per-user globally
+
+### Session flavor — typing ctx.session
+
+```ts
+import { session, type SessionFlavor } from "grammy";
+
+type MyContext = Context & SessionFlavor<SessionData>;
+
+const bot = new Bot<MyContext>(token);
+bot.use(session({ initial: () => ({ step: "idle" }) }));
+
+// ctx.session is now typed:
+bot.command("book", async (ctx) => {
+  ctx.session.step = "choosing";  // TypeScript knows this field
+});
+```
+
+### StorageAdapter interface
+
+grammY sessions work with any storage backend that implements:
+
+```ts
+interface StorageAdapter<T> {
+  read(key: string): T | undefined;
+  write(key: string, value: T): void;
+  delete(key: string): void;
+  has(key: string): boolean;
+  readAllKeys(): string[];
+}
+```
+
+Built-in options:
+- **Default** — in-memory `Map` (fast, lost on restart, fine for dev)
+- **SQLite** — durable, survives restarts (add `@grammyjs/storage-sqlite`)
+- **Redis** — fast + durable (add `@grammyjs/storage-redis`)
+- **Firebase, MongoDB, Supabase** — community adapters available
+
+---
+
+## 3. @memedev/bot-toolkit — Session Defaults
+
+### MemorySessionStorage
+
+The toolkit ships `MemorySessionStorage` — a grammY-compatible `StorageAdapter` backed by `Map`.
 
 ```ts
 import { MemorySessionStorage } from "@memedev/bot-toolkit";
 
-// Implements grammY StorageAdapter:
-// read(key) / write(key, value) / delete(key) / has(key) / readAllKeys()
+// Implements StorageAdapter:
+const store = new MemorySessionStorage<SessionData>();
+store.write("123_456", { step: "idle" });
+store.read("123_456");    // { step: "idle" }
+store.has("123_456");     // true
+store.delete("123_456");
+store.readAllKeys();      // []
 ```
 
-**You never need to instantiate it directly** — `createBot()` does it for you:
+**You rarely instantiate it directly.** `createBot()` uses it by default:
 
 ```ts
-const bot = createBot<Session>("TOKEN", {
+const bot = createBot<Session>(token, {
   initial: () => ({ step: "idle" }),
   // storage omitted → MemorySessionStorage used automatically
 });
 ```
 
----
+### Session shape design
 
-## Session shape design
-
-Define a typed session interface. Keep it flat and serializable (no functions, no classes):
+Keep sessions **flat and serializable** — no functions, no class instances, no circular refs:
 
 ```ts
 interface Session {
   // Dialog state
   step: string;
 
-  // Booking flow state
+  // Flow data (optional until set)
   serviceId?: string;
   slotDate?: string;
   slotTime?: string;
 
-  // Counters
+  // Simple counters
   bookingsCount?: number;
 }
 ```
@@ -63,23 +180,25 @@ initial: () => ({
 })
 ```
 
-Access session through typed context:
+### Harness isolation
 
-```ts
-import type { BotContext } from "@memedev/bot-toolkit";
+The test harness creates a **fresh bot per spec** via `makeBot()`. Each bot gets its own `MemorySessionStorage`:
 
-bot.command("book", async (ctx: BotContext<Session>) => {
-  ctx.session.step = "choosing_service";
-  ctx.session.bookingsCount = (ctx.session.bookingsCount ?? 0) + 1;
-  await ctx.reply("Choose a service:");
-});
+```
+Spec 1 ("booking flow"):
+  makeBot() → fresh MemorySessionStorage → session starts from initial()
+
+Spec 2 ("cancel flow"):
+  makeBot() → another fresh MemorySessionStorage → session starts from initial()
 ```
 
----
+- No session leaks between specs
+- No cleanup needed between runs
+- Each spec sees exactly the state `initial()` defines
 
-## SQLite adapter (preview)
+### SQLite in production
 
-Production bots swap in a SQLite adapter. It implements the same `StorageAdapter<S>` interface, so the rest of the bot code doesn't change.
+For production bots, swap to SQLite (same StorageAdapter interface, same bot code):
 
 ```ts
 import { SqliteSessionStorage } from "@memedev/bot-toolkit/sqlite"; // planned
@@ -90,72 +209,48 @@ const bot = createBot<Session>(token, {
 });
 ```
 
-Until the SQLite adapter ships, use `MemorySessionStorage` for dev and plan the swap later.
+Until the toolkit ships SQLite adapter, use grammY's `@grammyjs/storage-sqlite` directly — same interface.
 
----
+### Migration
 
-## Session key format
-
-grammY uses `chatId_userId` as the session key (e.g., `"12345_67890"`). This means:
-- Session is per-chat, not per-user
-- Group chats share one session
-- Private chats get one session per user
-
----
-
-## Migration patterns
-
-When adding fields to your session shape:
+Adding fields to session:
 
 ```ts
-// Old session:
-interface SessionV1 { step: string; }
+// V1
+interface Session { step: string; }
 
-// New session with migration:
-interface SessionV2 {
+// V2 — add optional field (safe, no migration needed)
+interface Session {
   step: string;
-  theme?: "light" | "dark";  // new optional field
+  theme?: "light" | "dark";  // optional — defaults to undefined
 }
 
-// In createBot, handle migration in initial or middleware:
-const bot = createBot<SessionV2>(token, {
-  initial: () => ({ step: "idle", theme: "light" }),
-});
-
-// For existing sessions, access ctx.session.theme with a default:
+// Access with default:
 const theme = ctx.session.theme ?? "light";
 ```
 
-**With MemorySessionStorage:** restarts wipe all sessions — no migration needed.
-**With SQLite:** optional fields (like `theme?`) are safe to add. Required new fields need a migration step.
+- **MemoryStorage:** restarts wipe everything — no migration needed
+- **SQLite:** optional fields safe to add. Required new fields need migration step that fills defaults for existing rows
 
 ---
 
-## Harness and sessions
+## Quick Reference
 
-The test harness creates a **fresh bot per spec** via `makeBot()`. Each bot has its own `MemorySessionStorage`, so:
-- Specs are isolated — no session leaks between tests
-- Session starts from `initial()` for each spec
-- No cleanup needed between runs
-
-```ts
-// In test spec:
-{
-  "name": "booking flow",
-  "steps": [
-    { "send": { "text": "/start" }, "expect": [{ "method": "sendMessage" }] },
-    { "send": { "text": "/book" },  "expect": [{ "method": "sendMessage", "payload": { "text": "Choose a service:" } }] }
-  ]
-}
-```
-
-Session state (`step = "idle"`) resets fresh for the next spec — no cross-contamination.
+| What | grammY | Toolkit |
+|---|---|---|
+| Activate sessions | `bot.use(session({...}))` | Auto via `createBot()` |
+| Type ctx.session | `Context & SessionFlavor<S>` | `BotContext<S>` (pre-built) |
+| Storage (dev) | In-memory Map (default) | MemorySessionStorage (default) |
+| Storage (prod) | `@grammyjs/storage-sqlite` | SqliteSessionStorage (planned) |
+| Session key | `chatId_userId` | Same |
+| Harness isolation | Manual setup | Automatic — fresh per spec |
 
 ---
 
 ## Common mistakes
 
-1. **Storing non-serializable data in session** — no functions, no class instances, no circular refs. Plain objects only.
-2. **Not initializing session fields** — always provide defaults in `initial()`.
-3. **Relying on session across restarts with MemoryStorage** — dev memory storage is ephemeral. Design flows to be restart-safe.
-4. **Forgetting session is per-chat, not per-user** — same user in different chats = different sessions.
+1. **Storing non-serializable data** — no functions, no class instances. Plain objects only.
+2. **Not initializing fields in `initial()`** — missing fields are `undefined`, not defaults.
+3. **Relying on session across restarts (MemoryStorage)** — ephemeral. Design flows restart-safe.
+4. **Session is per-chat, not per-user** — same user in different chats = different sessions.
+5. **Session key = `chatId_userId` string** — don't confuse with `chat.id` alone.
