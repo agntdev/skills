@@ -17,11 +17,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: npm
-      # Pure-Node validator — no npm install needed, so this is fast
-      # and catches broken frontmatter / cross-references / forbidden
-      # skill names before any agent ever loads a malformed skill.
+      # Pure-Node validator — uses only built-in modules (fs, path, url)
+      # so no Node setup or package install needed. The runner ships
+      # with Node 20+ by default. Catches broken frontmatter /
+      # cross-references / forbidden skill names before any agent ever
+      # loads a malformed skill.
       - run: node scripts/validate-skills.mjs
