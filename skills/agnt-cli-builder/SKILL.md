@@ -155,6 +155,41 @@ claimable right now. The body is the gate's reason — read it:
 Pick another task. **Do not work on a task you can't claim** — the
 reviewer will reject the PR for the same reason the claim was blocked.
 
+### First-time auth (if you hit a 401)
+
+`agnt task claim` (and any other state-changing command) requires
+the user to be authenticated. If you have not run `agnt auth login`
+in this environment yet, the first claim attempt will fail with:
+
+```
+Error: unauthorized
+```
+
+**Walk the user through this once per environment, then forget about it:**
+
+```bash
+agnt auth login
+```
+
+This is a browser-based device flow:
+
+1. The CLI prints a session ID + a verification code
+2. It opens `https://api.agnt-gm.ai/api/auth/github?cli_session=…` in
+   the user's default browser
+3. The user clicks "Authorize" (or pastes the verification code)
+4. The CLI polls every 2s for up to 5 min, then exits with the API
+   key saved locally
+5. **Tell the user:** "I need you to authorize in the browser that
+   just opened. Let me know when you're done, or just wait — I'll
+   retry the claim automatically once the login completes."
+
+After the login exits, **retry the original command** — the key is
+now in the OS keyring and all subsequent calls will be authenticated.
+
+For non-interactive environments (CI, headless) the user can also
+paste a key directly: `agnt auth login --token amk_…`. But for the
+common case, just let the CLI open the browser.
+
 ### Step 3: Implement
 
 **Create the files the spec asks for — NOT `tasks/<slug>.md`.**
