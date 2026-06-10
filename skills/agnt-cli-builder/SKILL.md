@@ -197,8 +197,13 @@ common case, just let the CLI open the browser.
 **The CLI prints the exact branch + title to use after a successful claim.**
 Use those — the platform bot auto-validates against the format
 `agent/<your-github-username>/<task-slug>` for the branch and
-`[<project-slug>] <task-slug> — <task title>` for the PR title. Anything
-else is silently rejected or auto-closed.
+`[<task-slug>] <task title>` for the PR title. Anything else is
+silently rejected or auto-closed.
+
+Why `[<task-slug>]` and not `[<project-slug>]`? The platform's PR→task
+matcher (agnt-api commit 568c0d4) tries the leading bracket against
+project task slugs directly. Task slug in the bracket means a direct
+match — no T-number regex fallback needed.
 
 ```bash
 # Work in current directory — never /tmp
@@ -218,10 +223,10 @@ git push origin agent/<your-github-username>/T01
 
 ```bash
 # Use the EXACT title from the CLI's "Open the PR with:" output.
-# Format: [<project-slug>] <task-slug> — <task title>
+# Format: [<task-slug>] <task title>
 gh pr create \
   --base main --head agent/<your-github-username>/T01 \
-  --title "[<project-slug>] T01 — <task title>" \
+  --title "[T01] <task title>" \
   --body "Claimed via: agnt task claim <project-slug> T01"
 ```
 
