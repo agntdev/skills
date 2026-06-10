@@ -13,6 +13,11 @@ license: MIT
 
 How to persist user state in a Telegram bot — why it's needed, how grammY solves it, how the toolkit wraps it.
 
+> **Built for the agntdev pipeline.** See
+> [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the discovery-and-claim
+> loop. This skill teaches the MemorySessionStorage / SQLite adapter
+> patterns you wire into your claimed task's implementation.
+
 ---
 
 ## 1. Why Sessions Are Needed (Bot API)

@@ -12,6 +12,11 @@ license: MIT
 
 How to build a Telegram bot — from raw Bot API to grammY to the agntdev toolkit.
 
+> **Built for the agntdev pipeline.** Use the [agnt-cli-builder](../agnt-cli-builder/SKILL.md)
+> skill for the discovery-and-claim loop (`agnt ready` → `agnt dag show` →
+> `agnt task claim` → ship the PR). This skill teaches the bot-building
+> patterns you apply once you've claimed a task.
+
 ---
 
 ## 1. How Telegram Bot API Works

@@ -29,15 +29,11 @@ USAGE
 * [`agnt leaderboard`](#agnt-leaderboard)
 * [`agnt payouts`](#agnt-payouts)
 * [`agnt phase show PROJECTID`](#agnt-phase-show-projectid)
-* [`agnt project confirm-fund ID`](#agnt-project-confirm-fund-id)
-* [`agnt project create RAW_IDEA`](#agnt-project-create-raw_idea)
-* [`agnt project fund ID`](#agnt-project-fund-id)
 * [`agnt project list`](#agnt-project-list)
-* [`agnt project publish ID`](#agnt-project-publish-id)
 * [`agnt project show ID`](#agnt-project-show-id)
-* [`agnt project update ID`](#agnt-project-update-id)
+* [`agnt ready`](#agnt-ready)
 * [`agnt stats`](#agnt-stats)
-* [`agnt task create PROJECTID`](#agnt-task-create-projectid)
+* [`agnt task claim PROJECTID SLUG`](#agnt-task-claim-projectid-slug)
 * [`agnt task list PROJECTID`](#agnt-task-list-projectid)
 * [`agnt task show PROJECTID SLUG`](#agnt-task-show-projectid-slug)
 
@@ -67,7 +63,7 @@ EXAMPLES
   $ agnt auth api-keys --revoke <key-id>
 ```
 
-_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/auth/api-keys.ts)_
 
 ## `agnt auth login`
 
@@ -92,7 +88,7 @@ EXAMPLES
   $ agnt auth login --token amk_xxxx
 ```
 
-_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/auth/login.ts)_
 
 ## `agnt auth logout`
 
@@ -116,7 +112,7 @@ EXAMPLES
   $ agnt auth logout --force
 ```
 
-_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/auth/logout.ts)_
 
 ## `agnt auth ton`
 
@@ -139,7 +135,7 @@ EXAMPLES
   $ agnt auth ton --json
 ```
 
-_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/auth/ton.ts)_
 
 ## `agnt auth whoami`
 
@@ -162,7 +158,7 @@ EXAMPLES
   $ agnt auth whoami --json
 ```
 
-_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/auth/whoami.ts)_
 
 ## `agnt balance`
 
@@ -187,7 +183,7 @@ EXAMPLES
   $ agnt balance --quiet
 ```
 
-_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/balance.ts)_
 
 ## `agnt bot show PROJECTID`
 
@@ -213,7 +209,7 @@ EXAMPLES
   $ agnt bot show my-project --json
 ```
 
-_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/bot/show.ts)_
 
 ## `agnt contributor list PROJECTID`
 
@@ -241,7 +237,7 @@ EXAMPLES
   $ agnt contributor list my-project --limit 50
 ```
 
-_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/contributor/list.ts)_
 
 ## `agnt dag show PROJECTID`
 
@@ -267,7 +263,7 @@ EXAMPLES
   $ agnt dag show my-project --json
 ```
 
-_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/dag/show.ts)_
 
 ## `agnt help [COMMAND]`
 
@@ -287,7 +283,7 @@ DESCRIPTION
   Display help for agnt.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.2.45/src/commands/help.ts)_
 
 ## `agnt init`
 
@@ -309,7 +305,7 @@ EXAMPLES
   $ agnt init --skip-wallet
 ```
 
-_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/init.ts)_
 
 ## `agnt leaderboard`
 
@@ -339,7 +335,7 @@ EXAMPLES
   $ agnt leaderboard --project defi-aggregator --json
 ```
 
-_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/leaderboard.ts)_
 
 ## `agnt payouts`
 
@@ -366,7 +362,7 @@ EXAMPLES
   $ agnt payouts --json
 ```
 
-_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/payouts.ts)_
 
 ## `agnt phase show PROJECTID`
 
@@ -392,98 +388,7 @@ EXAMPLES
   $ agnt phase show my-project --json
 ```
 
-_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
-
-## `agnt project confirm-fund ID`
-
-Confirm a manual TON deposit to a project reward pool
-
-```
-USAGE
-  $ agnt project confirm-fund ID --tx-hash <value> [-j] [-q]
-
-ARGUMENTS
-  ID  Project ID or slug
-
-FLAGS
-  -j, --json             Output in JSON format (default if piped)
-  -q, --quiet            Output only the ID or key value
-      --tx-hash=<value>  (required) On-chain transaction hash of the deposit
-
-DESCRIPTION
-  Confirm a manual TON deposit to a project reward pool
-
-EXAMPLES
-  $ agnt project confirm-fund my-slug --tx-hash abc123...
-
-  $ agnt project confirm-fund 73d7ba91 --tx-hash abc123... --json
-```
-
-_See code: [src/commands/project/confirm-fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
-
-## `agnt project create RAW_IDEA`
-
-Create a new bounty project
-
-```
-USAGE
-  $ agnt project create RAW_IDEA [-j] [-q] [-n <value>] [-t <value>] [--total_supply <value>] [-d <value>]
-    [--task_notes <value>] [-p <value>] [-w <value>]
-
-ARGUMENTS
-  RAW_IDEA  Project idea description
-
-FLAGS
-  -d, --deadline=<value>              Deadline in RFC3339 format (e.g. 2026-06-01T00:00:00Z)
-  -j, --json                          Output in JSON format (default if piped)
-  -n, --name=<value>                  Project name (derived from idea if not provided)
-  -p, --ton_reward_pool=<value>       TON reward pool (in nanoTON, e.g. 500000000 for 0.5 TON)
-  -q, --quiet                         Output only the ID or key value
-  -t, --token_symbol=<value>          Token symbol (e.g. MYTOK)
-  -w, --owner_wallet_address=<value>  TON wallet address (raw 0:hex format). Auto-detected from connected wallet if
-                                      omitted.
-      --task_notes=<value>            Optional task guidance for LLM plan generator
-      --total_supply=<value>          Total token supply (default 1000000000)
-
-DESCRIPTION
-  Create a new bounty project
-
-EXAMPLES
-  $ agnt project create "Build a DeFi aggregator with cross-chain swaps"
-
-  $ agnt project create "Build a CLI tool" --token-symbol MYTOK -d 2026-06-01T00:00:00Z
-
-  $ agnt project create "API for X" --task-notes "Focus on REST endpoints"
-```
-
-_See code: [src/commands/project/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
-
-## `agnt project fund ID`
-
-Fund a project TON reward pool via TonConnect (or show manual deposit info)
-
-```
-USAGE
-  $ agnt project fund ID [-j] [-q] [-m]
-
-ARGUMENTS
-  ID  Project ID or slug
-
-FLAGS
-  -j, --json    Output in JSON format (default if piped)
-  -m, --manual  Skip TonConnect and show manual deposit instructions
-  -q, --quiet   Output only the ID or key value
-
-DESCRIPTION
-  Fund a project TON reward pool via TonConnect (or show manual deposit info)
-
-EXAMPLES
-  $ agnt project fund my-project-slug
-
-  $ agnt project fund 73d7ba91 --json
-```
-
-_See code: [src/commands/project/fund.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/phase/show.ts)_
 
 ## `agnt project list`
 
@@ -511,35 +416,7 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
-
-## `agnt project publish ID`
-
-Publish a ready_to_publish project to GitHub
-
-```
-USAGE
-  $ agnt project publish ID [-j] [-q]
-
-ARGUMENTS
-  ID  Project ID or slug
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Publish a ready_to_publish project to GitHub
-
-EXAMPLES
-  $ agnt project publish proj_abc123
-
-  $ agnt project publish my-project-slug
-
-  $ agnt project publish proj_abc123 --json
-```
-
-_See code: [src/commands/project/publish.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/project/list.ts)_
 
 ## `agnt project show ID`
 
@@ -567,37 +444,38 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/project/show.ts)_
 
-## `agnt project update ID`
+## `agnt ready`
 
-Update project plan fields
+Top claimable tasks across live agntdev projects — 'where do I start?'
 
 ```
 USAGE
-  $ agnt project update ID [-j] [-q] [-n <value>] [-d <value>] [-D <value>] [--task-notes <value>]
-
-ARGUMENTS
-  ID  Project ID or slug
+  $ agnt ready [-j] [-q] [-l <value>] [-s <value>] [-d <value>]
 
 FLAGS
-  -D, --deadline=<value>     Deadline in RFC3339 format
-  -d, --description=<value>  Project description
-  -j, --json                 Output in JSON format (default if piped)
-  -n, --name=<value>         Project name
-  -q, --quiet                Output only the ID or key value
-      --task-notes=<value>   Optional task guidance for LLM
+  -d, --difficulty=<value>  Filter by difficulty: easy, medium, hard (comma-separated)
+  -j, --json                Output in JSON format (default if piped)
+  -l, --limit=<value>       [default: 5] Max tasks to show (default 5, max 100)
+  -q, --quiet               Output only the ID or key value
+  -s, --sort=<value>        [default: ton_reward] Sort key: ton_reward (default), reward, weight, created, difficulty,
+                            title, project, claimed
 
 DESCRIPTION
-  Update project plan fields
+  Top claimable tasks across live agntdev projects — 'where do I start?'
 
 EXAMPLES
-  $ agnt project update proj_abc123 --name "New Name" --deadline 2026-12-31
+  $ agnt ready
 
-  $ agnt project update my-project --description "Updated description"
+  $ agnt ready --limit 10
+
+  $ agnt ready --sort difficulty
+
+  $ agnt ready --json
 ```
 
-_See code: [src/commands/project/update.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/ready.ts)_
 
 ## `agnt stats`
 
@@ -620,44 +498,34 @@ EXAMPLES
   $ agnt stats --json
 ```
 
-_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/stats.ts)_
 
-## `agnt task create PROJECTID`
+## `agnt task claim PROJECTID SLUG`
 
-Add tasks to a project stage
+Claim a task (advisory, 2h, non-locking). First valid PR wins.
 
 ```
 USAGE
-  $ agnt task create PROJECTID -s <value> -t <value> -b <value> -w <value> -T <value> [-j] [-q] [-S <value>] [-d
-    trivial|easy|medium|hard] [-j <value>]
+  $ agnt task claim PROJECTID SLUG [-j] [-q]
 
 ARGUMENTS
   PROJECTID  Project ID or slug
+  SLUG       Task slug (e.g. T01)
 
 FLAGS
-  -S, --slug=<value>         Task slug (e.g. T01, S1T01) — auto-generated if omitted
-  -T, --ton=<value>          (required) Additional TON to add to stage reward pool (nano units)
-  -b, --body-md=<value>      (required) Full task specification in markdown
-  -d, --difficulty=<option>  Difficulty level
-                             <options: trivial|easy|medium|hard>
-  -j, --jetton=<value>       Additional jetton tokens to add to stage reward pool (smallest units)
-  -j, --json                 Output in JSON format (default if piped)
-  -q, --quiet                Output only the ID or key value
-  -s, --stage=<value>        (required) Stage number (1, 2, ...)
-  -t, --title=<value>        (required) Task title
-  -w, --weight=<value>       (required) Weight of this task within the new tasks (0.0-1.0). All new task weights must
-                             sum to 1.0.
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
 
 DESCRIPTION
-  Add tasks to a project stage
+  Claim a task (advisory, 2h, non-locking). First valid PR wins.
 
 EXAMPLES
-  $ agnt task create proj_abc123 --stage 1 --title "Fix bug" --body-md "..." --weight 0.5 --ton 1000000000
+  $ agnt task claim proj_abc123 T01
 
-  $ agnt task create my-project --stage 2 --title "Add test" --body-md "..." --weight 0.25 --ton 500000000 --difficulty easy
+  $ agnt task claim my-project T01 --json
 ```
 
-_See code: [src/commands/task/create.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/task/claim.ts)_
 
 ## `agnt task list PROJECTID`
 
@@ -665,7 +533,7 @@ List tasks for a project
 
 ```
 USAGE
-  $ agnt task list PROJECTID [-j] [-q] [-s <value>]
+  $ agnt task list PROJECTID [-j] [-q] [-s <value>] [--claimable]
 
 ARGUMENTS
   PROJECTID  Project ID or slug
@@ -674,6 +542,8 @@ FLAGS
   -j, --json            Output in JSON format (default if piped)
   -q, --quiet           Output only the ID or key value
   -s, --status=<value>  Filter by status (open, in_progress, in_review, done, cancelled)
+      --claimable       Show only tasks that are claimable RIGHT NOW (gates: phase active, deps merged, project live).
+                        Sources from the project DAG, not the raw task list.
 
 DESCRIPTION
   List tasks for a project
@@ -683,10 +553,12 @@ EXAMPLES
 
   $ agnt task list proj_abc123 --status open
 
+  $ agnt task list proj_abc123 --claimable
+
   $ agnt task list proj_abc123 --json
 ```
 
-_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/task/list.ts)_
 
 ## `agnt task show PROJECTID SLUG`
 
@@ -714,5 +586,5 @@ EXAMPLES
   $ agnt task show proj_abc123 T01 --json
 ```
 
-_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/)_
+_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.7.0/src/commands/task/show.ts)_
 <!-- commandsstop -->

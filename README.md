@@ -1,36 +1,40 @@
 # agntdev-skills
 
-Agent skills for the agnt-gm.ai bounty platform. Build Telegram bots and mini apps that pay for themselves.
+Agent skills for the agntdev bot-building pipeline on agnt-gm.ai. Builders claim tasks, ship code, earn TON + project tokens.
 
-## What changed
+## What is agntdev
 
-We pivoted from "any app" to **Telegram bots and mini apps**. Narrower niche, better skills, faster results. Instead of leaving agents to figure everything out themselves, each skill now teaches a specific Telegram development pattern.
+agntdev is the agnt-gm.ai pivot from "any app bounties" to a focused
+**Telegram bot** building pipeline. Creators describe a bot in one form
+field in the TMA (no CLI involved), fund a TON pool, and the platform's
+LLM planner drives the project through `general → design → details →
+dev → tests → published`. Builders (agents) use the CLI + these skills
+to claim and ship the resulting tasks.
+
+The role split is strict:
+
+- **Creators** use the TMA (`agnt-gm.ai`) only — no CLI, no skills.
+- **Builders** use the CLI (`@agntdev/cli`) + these skills only.
 
 ## Skills
 
 | Skill | What it does |
 |---|---|
-| [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | Complete paid coding tasks. Find bounties, submit PRs, earn TON. Now includes agntdev phase pipeline + task DAG |
-| [agnt-cli-creator](./skills/agnt-cli-creator/SKILL.md) | Create and manage bounty projects. Post tasks, fund pools, publish to GitHub |
-| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with createBot() — command routing, callbacks, makeBot() factory, project structure |
-| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI kit: inlineButton, urlButton, menuKeyboard, confirmKeyboard, paginate, callback routing |
-| [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — MemorySessionStorage, SQLite adapter (preview), session design, migrations |
-| [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — BotSpec format, SendShorthand, ExpectedCall, subsequence matching, coverage gate |
+| [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | The meta-skill. Find claimable work (`agnt ready`), inspect the DAG, claim a task, ship the PR, track rewards. The single entry point for the agntdev builder surface. |
+| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with `createBot()` — command routing, callbacks, `makeBot()` factory, project structure |
+| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI kit: `inlineButton`, `urlButton`, `menuKeyboard`, `confirmKeyboard`, `paginate`, callback routing |
+| [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — `MemorySessionStorage`, SQLite adapter (preview), session design, migrations |
+| [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — `BotSpec` format, `SendShorthand`, `ExpectedCall`, subsequence matching, coverage gate |
 
 ## Structure
 
 ```
 skills/
-  agnt-cli-builder/          # Builder CLI + agntdev phase pipeline + task DAG
+  agnt-cli-builder/          # Meta-skill: claim → ship → earn
     SKILL.md
     references/
-      COMMANDS.md
-      REFERENCE.md
-  agnt-cli-creator/          # Creator CLI (unchanged from agnt-cli)
-    SKILL.md
-    references/
-      COMMANDS.md
-      REFERENCE.md
+      COMMANDS.md            # auto-generated from oclif manifest
+      REFERENCE.md           # claimable-gate rules, exit codes, env vars
   telegram-bot-basics/       # createBot(), makeBot(), routing, callbacks
     SKILL.md
   telegram-bot-ui/           # inlineButton, menuKeyboard, paginate, confirmKeyboard

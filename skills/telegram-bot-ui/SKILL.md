@@ -13,6 +13,11 @@ license: MIT
 
 How to build bot UIs — from raw Bot API keyboard JSON to grammY to toolkit builders.
 
+> **Built for the agntdev pipeline.** See
+> [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the discovery-and-claim
+> loop. This skill teaches the inline-button, menu, paginate, and
+> confirmKeyboard patterns you use in your claimed task's implementation.
+
 ---
 
 ## 1. How Telegram Keyboards Work (Bot API)
