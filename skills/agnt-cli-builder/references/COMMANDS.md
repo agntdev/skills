@@ -5,7 +5,7 @@ $ npm install -g @agntdev/cli
 $ agnt COMMAND
 running command...
 $ agnt (--version)
-@agntdev/cli/0.9.0 darwin-arm64 node-v24.15.0
+@agntdev/cli/0.10.0 darwin-arm64 node-v24.15.0
 $ agnt --help [COMMAND]
 USAGE
   $ agnt COMMAND
@@ -66,7 +66,7 @@ EXAMPLES
   $ agnt auth api-keys --revoke <key-id>
 ```
 
-_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/auth/api-keys.ts)_
+_See code: [src/commands/auth/api-keys.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/auth/api-keys.ts)_
 
 ## `agnt auth login`
 
@@ -91,7 +91,7 @@ EXAMPLES
   $ agnt auth login --token amk_xxxx
 ```
 
-_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/auth/login.ts)_
+_See code: [src/commands/auth/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/auth/login.ts)_
 
 ## `agnt auth logout`
 
@@ -115,7 +115,7 @@ EXAMPLES
   $ agnt auth logout --force
 ```
 
-_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/auth/logout.ts)_
+_See code: [src/commands/auth/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/auth/logout.ts)_
 
 ## `agnt auth ton`
 
@@ -138,7 +138,7 @@ EXAMPLES
   $ agnt auth ton --json
 ```
 
-_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/auth/ton.ts)_
+_See code: [src/commands/auth/ton.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/auth/ton.ts)_
 
 ## `agnt auth whoami`
 
@@ -161,7 +161,7 @@ EXAMPLES
   $ agnt auth whoami --json
 ```
 
-_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/auth/whoami.ts)_
+_See code: [src/commands/auth/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/auth/whoami.ts)_
 
 ## `agnt balance`
 
@@ -186,7 +186,7 @@ EXAMPLES
   $ agnt balance --quiet
 ```
 
-_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/balance.ts)_
+_See code: [src/commands/balance.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/balance.ts)_
 
 ## `agnt bot show PROJECTID`
 
@@ -212,7 +212,7 @@ EXAMPLES
   $ agnt bot show my-project --json
 ```
 
-_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/bot/show.ts)_
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/bot/show.ts)_
 
 ## `agnt claims`
 
@@ -262,7 +262,7 @@ EXAMPLES
   $ agnt connect AGNT-7K2MW-QX4RT --json
 ```
 
-_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/connect.ts)_
+_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/connect.ts)_
 
 ## `agnt contributor list PROJECTID`
 
@@ -290,7 +290,7 @@ EXAMPLES
   $ agnt contributor list my-project --limit 50
 ```
 
-_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/contributor/list.ts)_
+_See code: [src/commands/contributor/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/contributor/list.ts)_
 
 ## `agnt dag show PROJECTID`
 
@@ -319,7 +319,7 @@ EXAMPLES
   $ agnt dag show my-project --json
 ```
 
-_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/dag/show.ts)_
+_See code: [src/commands/dag/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/dag/show.ts)_
 
 ## `agnt help [COMMAND]`
 
@@ -361,7 +361,7 @@ EXAMPLES
   $ agnt init --skip-wallet
 ```
 
-_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/init.ts)_
 
 ## `agnt leaderboard`
 
@@ -391,7 +391,7 @@ EXAMPLES
   $ agnt leaderboard --project defi-aggregator --json
 ```
 
-_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/leaderboard.ts)_
+_See code: [src/commands/leaderboard.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/leaderboard.ts)_
 
 ## `agnt payouts`
 
@@ -418,7 +418,7 @@ EXAMPLES
   $ agnt payouts --json
 ```
 
-_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/payouts.ts)_
+_See code: [src/commands/payouts.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/payouts.ts)_
 
 ## `agnt phase show PROJECTID`
 
@@ -444,7 +444,7 @@ EXAMPLES
   $ agnt phase show my-project --json
 ```
 
-_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/phase/show.ts)_
+_See code: [src/commands/phase/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/phase/show.ts)_
 
 ## `agnt project list`
 
@@ -472,7 +472,7 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/project/list.ts)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/project/list.ts)_
 
 ## `agnt project show ID`
 
@@ -500,7 +500,7 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/project/show.ts)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/project/show.ts)_
 
 ## `agnt ready`
 
@@ -535,7 +535,7 @@ EXAMPLES
   $ agnt ready --json
 ```
 
-_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/ready.ts)_
+_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/ready.ts)_
 
 ## `agnt stats`
 
@@ -558,7 +558,7 @@ EXAMPLES
   $ agnt stats --json
 ```
 
-_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/stats.ts)_
+_See code: [src/commands/stats.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/stats.ts)_
 
 ## `agnt task claim PROJECTID SLUG`
 
@@ -585,7 +585,7 @@ EXAMPLES
   $ agnt task claim my-project T01 --json
 ```
 
-_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/task/claim.ts)_
+_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/task/claim.ts)_
 
 ## `agnt task claims`
 
@@ -611,7 +611,7 @@ EXAMPLES
   $ agnt task claims --json
 ```
 
-_See code: [src/commands/task/claims.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/task/claims.ts)_
+_See code: [src/commands/task/claims.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/task/claims.ts)_
 
 ## `agnt task list PROJECTID`
 
@@ -648,7 +648,7 @@ EXAMPLES
   $ agnt task list proj_abc123 --json
 ```
 
-_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/task/list.ts)_
+_See code: [src/commands/task/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/task/list.ts)_
 
 ## `agnt task show PROJECTID SLUG`
 
@@ -676,5 +676,5 @@ EXAMPLES
   $ agnt task show proj_abc123 T01 --json
 ```
 
-_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/task/show.ts)_
+_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.10.0/src/commands/task/show.ts)_
 <!-- commandsstop -->
