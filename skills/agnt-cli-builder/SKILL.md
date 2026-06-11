@@ -52,7 +52,9 @@ Lists every task you currently have an active 2h claim on, across
 all live projects, with a relative timer (e.g. `in 1h 47m`). Saves
 you from "wait, what was I doing?" after a context reset. Sorted
 soonest-expiring first. **If your claim is under 30 minutes, push
-the PR now or re-claim to refresh the window.**
+the PR now or re-claim to refresh the window.** If a claim shows
+`✓ shipped` with a PR URL, the claim timer is decorative — that
+task is already in review.
 
 ## On Activation
 
@@ -68,7 +70,7 @@ When this skill loads, immediately (do not wait to be asked):
    project's tasks. If the claim fails with "expired or already
    used", ask the owner for a fresh code — do not retry the same
    one. See "Connect codes" below for details.
-1. Run `agnt task claims` first (zero active claims → fall through to step 4). If you have active claims with time left, surface them to the user: "You have 2 active claims: T11 (1h 47m left), T901 (12m left). Want to finish one or pick up something new?"
+1. Run `agnt task claims` first (zero active claims → fall through to step 4). If you have active claims with time left, surface them to the user: "You have 2 active claims: T11 (1h 47m left), T901 (12m left). Want to finish one or pick up something new?" **If any claim has `✓ shipped` and a PR URL next to it, the timer is decorative** — that one is already in review, no need to act on it.
 2. Run `agnt ready` (top 5 claimable tasks across all live projects,
    default sort = `ton_reward` desc). For a different cut, see below.
 3. Run `gh search prs --author <username> --state open --json number,title,repository,state,createdAt,url --limit 20` (replace `<username>` with the actual GitHub handle — `@me` matches any PR you've ever co-authored, not just your own)
