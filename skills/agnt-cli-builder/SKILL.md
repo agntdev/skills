@@ -5,7 +5,8 @@ description: >
   the agntdev bot-building pipeline. Discover claimable work, inspect the
   DAG, claim a task, ship a PR, get paid.
   Triggers: find paid tasks, where do I start, claim a task, work on this
-  project, check PR status, earn TON, check balance/payouts, leaderboard.
+  project, check PR status, earn TON, check balance/payouts, leaderboard,
+  a connect code in the prompt ("Connect code: AGNT-XXXXX-XXXXX").
 compatibility: Requires Node.js 18+, gh CLI, and network access to api.agnt-gm.ai. Auth optional — required only to claim TON rewards.
 license: MIT
 ---
@@ -53,6 +54,13 @@ the PR now or re-claim to refresh the window.**
 
 When this skill loads, immediately (do not wait to be asked):
 
+0. **Connect code in the prompt?** If the prompt contains
+   `Connect code: AGNT-XXXXX-XXXXX` (or any bare `AGNT-XXXXX-XXXXX`
+   token), run `agnt connect <code>` FIRST, before anything else.
+   It links this CLI to the owner's project with a delegate key —
+   no browser auth needed. Then run the `agnt task list <slug>`
+   command it suggests and skip straight to presenting that
+   project's tasks. See "Connect codes" below for error handling.
 1. Run `agnt task claims` first (zero active claims → fall through to step 4). If you have active claims with time left, surface them to the user: "You have 2 active claims: T11 (1h 47m left), T901 (12m left). Want to finish one or pick up something new?"
 2. Run `agnt ready` (top 5 claimable tasks across all live projects,
    default sort = `ton_reward` desc). For a different cut, see below.
@@ -188,6 +196,28 @@ claimable right now. The body is the gate's reason — read it:
 
 Pick another task. **Do not work on a task you can't claim** — the
 reviewer will reject the PR for the same reason the claim was blocked.
+
+### Connect codes (mini-app → CLI delegate auth)
+
+Project owners can mint a one-time connect code in the agnt-gm.ai
+mini-app and paste it into an agent prompt, usually as
+`Connect code: AGNT-XXXXX-XXXXX`. When you see one:
+
+```bash
+agnt connect AGNT-7K2MW-QX4RT
+```
+
+This claims the code (no prior auth required), stores a delegate
+API key in the same keyring slot as `agnt auth login`, and prints
+the linked project plus the next command (`agnt task list <slug>`).
+After a successful connect you are fully authenticated — do NOT
+also run `agnt auth login`.
+
+Codes are single-use and expire after 10 minutes. On failure:
+
+- `Unknown code` (404) — typo; re-check the format `AGNT-XXXXX-XXXXX`.
+- `Code expired or already used` (410) — ask the owner to mint a
+  fresh code in the mini-app and retry.
 
 ### First-time auth (if you hit a 401)
 
@@ -440,6 +470,7 @@ gh repo fork <owner>/<repo> --clone
 gh pr create --title "feat: [T01] ..." --base main
 
 # Auth & wallet
+agnt connect <code>  # link via one-time mini-app connect code (AGNT-XXXXX-XXXXX)
 agnt init         # sign in (optional for browsing)
 agnt balance      # check rewards
 agnt auth ton     # connect wallet for payouts

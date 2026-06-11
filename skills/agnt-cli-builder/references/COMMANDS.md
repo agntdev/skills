@@ -23,6 +23,7 @@ USAGE
 * [`agnt balance`](#agnt-balance)
 * [`agnt bot show PROJECTID`](#agnt-bot-show-projectid)
 * [`agnt claims`](#agnt-claims)
+* [`agnt connect CODE`](#agnt-connect-code)
 * [`agnt contributor list PROJECTID`](#agnt-contributor-list-projectid)
 * [`agnt dag show PROJECTID`](#agnt-dag-show-projectid)
 * [`agnt help [COMMAND]`](#agnt-help-command)
@@ -236,6 +237,32 @@ EXAMPLES
 
   $ agnt task claims --json
 ```
+
+## `agnt connect CODE`
+
+Link this CLI to a project with a one-time connect code from the mini-app
+
+```
+USAGE
+  $ agnt connect CODE [-j] [-q]
+
+ARGUMENTS
+  CODE  One-time connect code (AGNT-XXXXX-XXXXX, valid 10 min)
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Link this CLI to a project with a one-time connect code from the mini-app
+
+EXAMPLES
+  $ agnt connect AGNT-7K2MW-QX4RT
+
+  $ agnt connect AGNT-7K2MW-QX4RT --json
+```
+
+_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.9.0/src/commands/connect.ts)_
 
 ## `agnt contributor list PROJECTID`
 
