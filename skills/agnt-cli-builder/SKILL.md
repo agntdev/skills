@@ -205,6 +205,13 @@ matcher (agnt-api commit 568c0d4) tries the leading bracket against
 project task slugs directly. Task slug in the bracket means a direct
 match — no T-number regex fallback needed.
 
+**Head ref for forks:** `gh pr create` against a forked repo needs the
+head in `OWNER:BRANCH` form, not just `BRANCH`. The CLI prints both:
+the local branch name (`agent/<user>/<task-slug>`) for the work, and
+the full head ref (`<user>:agent/<user>/<task-slug>`) for the
+`--head` flag. Use the `OWNER:BRANCH` form or you get
+`Head sha can't be blank`.
+
 ```bash
 # Work in current directory — never /tmp
 gh repo fork <owner>/<repo> --clone
@@ -386,7 +393,9 @@ agnt ready                          # top 5 claimable across all live projects
 agnt project list --status live
 agnt phase show <id>                # current phase + next_action
 agnt dag show <id>                  # full DAG with claimable verdicts
+agnt dag show <id> --summary        # compact TTY table (scan 20+ tasks fast)
 agnt task list <id> --claimable     # only currently-claimable tasks
+agnt task list <id> --mine          # only your active claims (per project)
 agnt task show <id> <slug>          # full task spec (body_md)
 
 # Claim + ship
