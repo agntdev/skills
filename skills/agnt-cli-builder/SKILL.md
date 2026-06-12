@@ -299,6 +299,46 @@ git commit -m "feat(T01): implement <description>"
 git push origin agent/<your-github-username>/T01
 ```
 
+### Step 3.5: Dry-run review (`agnt test`) — before you push
+
+**Always run `agnt test` before opening the PR.** The platform exposes a
+`/preview-review` endpoint (#121) that runs the same LLM reviewer on your
+unpushed diff in seconds and returns a verdict — approve / reject /
+manual_review. Catches the bot's actual complaints *before* you push, so
+the bot doesn't auto-close the PR 3 seconds later.
+
+```bash
+# Default: reads `git diff origin/main...HEAD`, POSTs to /preview-review
+agnt test my-project T01
+
+# Or pass a diff file / stdin
+agnt test my-project T01 --diff ./my-changes.patch
+git diff origin/main...HEAD | agnt test my-project T01 --diff -
+
+# Auto-detects origin/main, origin/master, main, master, HEAD~1.
+# Override with --base if your fork's default is different.
+agnt test my-project T01 --base origin/develop
+```
+
+**Exit codes** (CI-gate ready):
+- `0` — approve OR manual_review (advisory pass)
+- `1` — reject (fix the reasons, re-run)
+- `2` — empty diff or diff over 256 KiB
+- `3` — not authenticated
+- `4` — project or task not found
+- `5` — server LLM not configured (ask ops)
+
+**Why this matters.** The post-push reviewer (in the opencode container)
+has been wrong before — comparing HEAD vs HEAD instead of the diff, or
+inverting the direction of a fix. `agnt test` uses the same endpoint the
+platform reviewer uses, so if `agnt test` says approve, the post-push
+verdict is very likely approve too. If `agnt test` says reject, save
+yourself a 3-second auto-close.
+
+**The verdict is advisory.** The binding gate is the real PR pipeline.
+But: an approve from `agnt test` + a clean diff stat + the exact branch
++ title format below is the safest bet you'll get.
+
 ### Step 4: Submit PR
 
 ```bash
@@ -386,6 +426,39 @@ agnt phase show <id>    # current phase, status, phase-order, next action
 agnt dag show <id>      # task graph with claimable:true/false + block reason
 agnt bot show <id>      # managed bot identity + container state (token never exposed)
 ```
+
+### When phase is failed: the chicken-and-egg escape hatch
+
+When a phase review fails, the platform materializes a `fix` task per
+finding. **All of them are unclaimable** — the claim gate
+(`builder_dag.go`) blocks every claim with:
+
+> `project phase is failed; tasks can be claimed only while the phase is active`
+
+This is the loop: phase failed → fix tasks created → can't claim fix
+tasks → can't push fixes → phase stays failed.
+
+**The escape hatch: you don't need to claim.** Push a PR with:
+
+- **Branch:** `agent/<your-github-username>/<fix-slug>`
+  (e.g. `agent/laontme/fix-169adf0ff6c0d664`)
+- **Title:** `[<fix-slug>] <fix title>`
+
+The platform matches branch+title to the fix task automatically, even
+though you never claimed it. The claim is advisory anyway.
+
+**What `agnt task claim` says** when you hit this: the CLI now special-cases
+the "phase is failed" error and prints the hint above (instead of the
+raw server message).
+
+**What to do if the bot then auto-closes the PR:** the post-push
+reviewer is in an opencode container prompt and has been wrong before
+(inverting fix direction, comparing HEAD instead of the diff). The
+platform's `agnt task claim` recipe for fix PRs is identical to the
+recipe for normal claims. The cleanest path is to **dry-run first**
+with `agnt test <project> <fix-slug>` (Step 3.5) and only push if it
+returns `approve`. If the post-push bot still rejects, see the failure
+mode in the references.
 
 ---
 
