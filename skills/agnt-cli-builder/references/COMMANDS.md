@@ -257,7 +257,7 @@ _See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/bl
 
 ## `agnt project show ID`
 
-Show project details (incl. build_mode, C12)
+Show project details (incl. build_mode + build_pipeline)
 
 ```
 USAGE
@@ -271,7 +271,7 @@ FLAGS
   -q, --quiet  Output only the ID or key value
 
 DESCRIPTION
-  Show project details (incl. build_mode, C12)
+  Show project details (incl. build_mode + build_pipeline)
 
 EXAMPLES
   $ agnt project show proj_abc123

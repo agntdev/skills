@@ -17,6 +17,7 @@
 //   6. `references/` (if present) is a directory, not a file
 //   7. `license` is one of the standard SPDX identifiers we ship
 //   8. No skill named "agnt-cli-creator" — that role moved to the TMA
+//   9. Every fenced code block in SKILL.md is balanced (open + close)
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -157,6 +158,21 @@ for (const skillDir of walk(SKILLS_DIR)) {
     if (!existsSync(abs)) {
       err(dirName, `SKILL.md references missing file: ${rel}`);
     }
+  }
+
+  // Fenced code-block balance. A stray closing ``` (or a missing
+  // closer) breaks the rest of the file's render in some agents
+  // (and confuses grep-on-render). Count top-level fences; even
+  // count = balanced, odd = an orphan somewhere. We catch the
+  // count here, the line number in the error message tells the
+  // author where to look.
+  const fenceRe = /^```/gm;
+  const fenceCount = (skillText.match(fenceRe) || []).length;
+  if (fenceCount % 2 !== 0) {
+    err(
+      dirName,
+      `unbalanced fenced code blocks in SKILL.md (${fenceCount} fences — odd, expected even). An orphan \`\`\` will break the render downstream.`,
+    );
   }
 
   // references/ layout sanity.

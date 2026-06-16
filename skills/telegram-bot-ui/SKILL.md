@@ -172,7 +172,6 @@ bot.on("callback_query:data", async (ctx) => {
 >
 > Pattern that works: route by `data.split(":")[0] + ":"` (the
 > namespaced prefix), not by the first character.
-```
 
 ### Edit vs new message in grammY
 
