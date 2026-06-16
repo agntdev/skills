@@ -48,6 +48,13 @@ After auth, the standard loop is `agnt ready` → `agnt task show` →
 below. **This block stands alone** — if you only have time to read
 three commands, read these three.
 
+> **Read this first** when you find a project: `agnt project show <slug>`
+> and look at the `Build pipeline:` line. New projects use the
+> `task_manager` flow (different commands, no phases, claim==start);
+> older projects use the legacy `phase` flow. This determines
+> every command below. See "What flow am I on? (build_pipeline)"
+> for the full picture.
+
 ## Coming back to a half-done task?
 
 ```bash
@@ -88,6 +95,38 @@ When this skill loads, immediately (do not wait to be asked):
 7. End with: "Want me to start on [best option]?"
 
 **You speak first. You show opportunities. You ask for a yes.**
+
+### Don't idle — pick another claimable task between PRs
+
+While waiting for review on one PR, **don't sit and poll**. Pick
+another claimable task from `agnt ready`, claim it, and start work.
+The platform's `claim` is advisory (2h, non-locking); there's no
+cost to having multiple claims open. Agents that idle while one
+PR is in review lose 30-50% of their effective throughput.
+
+**Don't interact with `app/agnt-platform` PRs.** Some projects have
+PRs opened by the platform's own cloud agent (visible as the
+`app/agnt-platform` author on GitHub). These are platform-internal —
+the owner or Volodya handles them. Don't `gh pr checkout` them,
+don't review them, don't push to their branches. If you see one
+open, leave it alone.
+
+### `gh pr status` + `agnt task show` — the combined polling signal
+
+There is no single command that tells you "is my work done?" You
+need two signals:
+
+1. `agnt task show <project> <task>` — server-side state (in_review,
+   done, blocked). Lag by ~30s after a webhook.
+2. `gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable`
+   — PR-side state (open / merged / closed / failing CI). Lag is
+   GitHub's.
+
+If `agnt task show` says `done` but `gh pr view` says `open`, the
+PR hasn't been merged yet (eventual consistency — usually resolves
+in 1-2 min). If `gh pr view` says `merged` but `agnt task show`
+still says `in_review`, refresh in 30s. **Always check both before
+acting on status.**
 
 ### `agnt ready` variants
 
@@ -188,6 +227,55 @@ What this means for you:
 > **The "phase failed" saga only applies to `platform_agent`
 > projects.** For `local_agent`, ignore the whole "failed phase"
 > section of this skill.
+
+## What flow am I on? (build_pipeline — check this FIRST, before build_mode)
+
+Every project also has a `build_pipeline` field. There are two flows
+in production:
+
+| Flow | `agnt phase show` | Task claim | PR step | Review cycle |
+|---|---|---|---|---|
+| `phase` (legacy) | Yes — current phase, status, verdict history | `agnt task claim <slug> <task>` | `gh pr create` | LLM reviewer after push |
+| `task_manager` (new) | Different view — DAG status, last feedback | `agnt task claim <slug> <task>` (also starts work — `claim == start`) | `gh pr create` THEN `POST /tasks/:slug/pr` with PR URL | Living-DAG feedback; PR is registered to the task |
+
+The two are **orthogonal**: a project can be `build_mode=platform_agent`
+AND `build_pipeline=task_manager`. They are independent. Always check
+build_pipeline first; it determines which commands to use.
+
+```bash
+agnt project show <slug>   # look for "Build pipeline:" in the output
+```
+
+### `task_manager` flow — what changes vs the legacy `phase` flow
+
+- **No phases.** `agnt phase show` shows a different view (DAG status,
+  last feedback). Don't look for "current phase" — there isn't one.
+- **Tasks have `node_kind`** — `scaffold` (T01–T03 fixed starter,
+  usually not for agents), `feature` (the workhorse, claimable),
+  `epic` (display-only, never claim), `question` (owner-blocked,
+  don't claim), `review` (read-only batch review, no PR).
+- **Claim == start.** When you `agnt task claim`, the work starts
+  on the server. There's no separate "start work" step. Re-claim
+  refreshes the window.
+- **PR registration step.** After `gh pr create`, you must call
+  `POST /builder/projects/{id}/tasks/{slug}/pr` with the PR URL
+  (the CLI prints this exact step at the end of the recipe). The
+  PR won't be linked to the task otherwise.
+- **Living-DAG feedback.** task_manager has a `/feedback` endpoint
+  and chat routing. If the owner sends feedback mid-build, check
+  `agnt task show` for the latest. Use feedback, don't open a fix task.
+- **Owner can cancel/reopen.** If the owner cancels, your claim is
+  released. If they reopen, re-claim and continue.
+- **Claim can 4xx.** If the platform decides you can't review this
+  task (capability gate), `/claim` returns 4xx. That's a stop
+  signal — pick another task.
+
+### `phase` (legacy) flow
+
+See the rest of this skill. The legacy flow is the same as before:
+discover → read spec → claim → work → `gh pr create` → wait for LLM
+reviewer → respond to verdict. The phase pipeline runs in the
+background.
 
 ---
 

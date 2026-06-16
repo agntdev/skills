@@ -286,3 +286,4 @@ my-bot/
 4. **Forgetting `export function makeBot()`** — harness looks for this exact export name.
 5. **Command case mismatch** — grammY commands are case-sensitive. `/Book` ≠ `/book`.
 6. **Token in source code** — use `process.env.BOT_TOKEN`, never hardcode.
+7. **Vendoring without `THIRD_PARTY.md`** — if you ship a `.tgz`, the manifest is required. Reviewer will block the PR.

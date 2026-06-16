@@ -249,10 +249,16 @@ Invoked via `@agntdev/bot-toolkit` CLI:
 
 ```
 AGNTDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()
-AGNTDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec
+AGNTDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec (legacy) OR
+AGNTDEV_SPECS_GLOB=./tests/specs/*.json # per-feature pattern (task_manager)
 AGNTDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
 AGNTDEV_GATE_NONCE=abc123               # nonce for verdict auth
 ```
+
+For `task_manager` projects, set `AGNTDEV_SPECS_GLOB` instead of
+`AGNTDEV_SPECS_FILE`. The harness globs the per-feature files and
+merges them at gate time. See section 6 below for the full per-feature
+pattern.
 
 ### Full example: booking bot specs
 
@@ -294,6 +300,75 @@ AGNTDEV_GATE_NONCE=abc123               # nonce for verdict auth
 | Expected output | `{ method: "sendMessage", payload: { text: "Hi" } }` (deep subset) |
 | Verdict | `GATE:<nonce>:{"ok":bool, ...}` on stdout |
 | Coverage | Every declared command needs >= 1 non-empty expect spec |
+
+---
+
+## 6. Per-feature spec files (task_manager projects)
+
+`task_manager` projects (those with `build_pipeline=task_manager` — see
+[agnt-cli-builder](../agnt-cli-builder/SKILL.md) "What flow am I on?")
+organize their test specs as **one JSON file per feature task** in
+`tests/specs/<slug>.json`. The platform globs and merges them at gate
+time, so each file is independent.
+
+### File layout
+
+```
+my-bot/
+├── tests/
+│   ├── specs/
+│   │   ├── T01.json      # one file per feature task
+│   │   ├── T02.json
+│   │   └── T03.json
+│   ├── helpers.ts        # if you use programmatic tests (see advanced skill)
+│   └── start.test.ts
+```
+
+Each file is a JSON array of `BotSpec` objects (same shape as section 3
+above). Example `tests/specs/T02.json`:
+
+```json
+[
+  {
+    "name": "T02: /balance shows the user's TON balance",
+    "steps": [
+      { "send": { "text": "/balance" }, "expect": [
+        { "method": "sendMessage", "payload": { "text": "Balance: 42.5 TON" } }
+      ] }
+    ]
+  }
+]
+```
+
+### Why per-file (not one big specs.json)?
+
+- **No merge conflicts.** Multiple agents work on different features
+  in parallel; one spec file per feature means no shared-file gridlock.
+- **Per-task coverage.** The platform's gate maps each spec file to
+  the task slug in its filename. Coverage is checked per-task, not
+  globally — so failing the T03 specs doesn't block T02 from passing.
+- **Decompose-driven.** The `task_manager` decompose step writes one
+  spec file per feature task automatically. You can override or
+  extend them; you don't have to author from scratch.
+
+### Writing a per-feature spec
+
+The spec file content is the same `BotSpec` JSON shape as section 3
+above. The only difference is the file location: `tests/specs/<slug>.json`
+instead of one big `specs.json`. The slug in the filename **must**
+match the task slug exactly (case-sensitive).
+
+### When the gate runs
+
+When the platform runs the Tests stage for a `task_manager` project,
+it globs `tests/specs/*.json`, merges them into one in-memory array,
+and runs the harness against the union. Per-spec GATE results are
+attributed back to the source file (so a failure on T02's specs
+shows up as "T02 spec failed" in the platform's review verdict).
+
+If your project has BOTH legacy and task_manager tests (e.g. you're
+migrating), the per-feature pattern takes precedence. The platform
+ignores a top-level `specs.json` if `tests/specs/*.json` exists.
 
 ---
 
