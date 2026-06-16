@@ -245,22 +245,54 @@ if (require.main === module) {
 
 **Rule:** `makeBot()` must return a NEW bot every call. Do NOT cache it.
 
-### Project structure
+> **Entry point (v0.14.2).** The build script should emit `dist/index.js`
+> (canonical). The platform's Dockerfile accepts `dist/main.js` and bare
+> `index.js` as legacy fallbacks, but new bots should target
+> `dist/index.js`. See [`telegram-bot-deploy`](../telegram-bot-deploy/SKILL.md#3-the-build-contract).
+
+### Project structure (v0.14.2)
+
+Every new bot is created from the **`agntdev/bot-starter`** template repo
+(agnt-api PR #1260c06). The platform's provisioner seeds the new bot repo
+from this template on project creation, so you start with a bootable
+skeleton — T01's task is **extend the skeleton**, not "create from scratch".
 
 ```
-my-bot/
+my-bot/                         # created from agntdev/bot-starter
 ├── src/
-│   ├── index.ts          # makeBot() factory — THE mandatory export
-│   ├── commands/         # one file per command handler
-│   │   └── start.ts
-│   └── flows/            # multi-step dialog flows
-│       └── booking.ts
+│   ├── bot.ts                  # buildBot() factory — used by src/index.ts
+│   ├── index.ts                # runtime entry: makeBot().start() (long polling)
+│   └── harness-entry.ts        # makeBot() for the tests gate (the harness imports this)
 ├── tests/
-│   └── specs/            # BotSpec JSON files
-│       └── start.json
-├── package.json
+│   ├── specs/                  # per-feature BotSpec JSON files (v0.14.0+)
+│   │   └── start.json
+│   └── commands.json           # declared commands for the coverage gate
+├── .npmrc                      # @agntdev:registry=https://npm.pkg.github.com (REQUIRED)
+├── AGENTS.md                   # anti-stub contract (PR #161)
+├── package.json                # @agntdev/bot-toolkit + grammy
+├── Dockerfile                  # ignored by the platform; commit a stub if you want
 └── tsconfig.json
 ```
+
+If you're working with a **pre-v0.14.2 bot repo**, the old layout was:
+
+```
+my-bot/                         # legacy (pre-template)
+├── src/
+│   ├── index.ts                # was: combined makeBot() + runtime
+│   ├── commands/               # was: one file per command handler
+│   └── flows/                  # was: multi-step dialog flows
+├── tests/
+│   └── specs/
+├── .agntdev-bot-toolkit.tgz    # was: vendored toolkit (REMOVED in v0.14.2)
+├── .agntdev-bot-toolkit.SHA256 # was: vendored toolkit checksum (REMOVED)
+├── THIRD_PARTY.md              # was: vendor justification (REMOVED)
+├── package.json                # was: file:./.agntdev-bot-toolkit.tgz
+└── tsconfig.json
+```
+
+See [`telegram-bot-deploy` §8](../telegram-bot-deploy/SKILL.md#8-migrating-from-the-old-vendoring-model)
+for the migration recipe.
 
 ---
 
@@ -286,4 +318,9 @@ my-bot/
 4. **Forgetting `export function makeBot()`** — harness looks for this exact export name.
 5. **Command case mismatch** — grammY commands are case-sensitive. `/Book` ≠ `/book`.
 6. **Token in source code** — use `process.env.BOT_TOKEN`, never hardcode.
-7. **Vendoring without `THIRD_PARTY.md`** — if you ship a `.tgz`, the manifest is required. Reviewer will block the PR.
+7. **Vendoring a `.agntdev-bot-toolkit.tgz`** — gone in v0.14.2. The toolkit
+   ships from GitHub Packages (`@agntdev/bot-toolkit`, semver-pinned in
+   `package.json`); the `.npmrc` and `NODE_AUTH_TOKEN` are wired by the
+   platform. Don't vendor a `.tgz` — it won't be reachable from the build
+   container. The bot-starter template (`agntdev/bot-starter`) already
+   has this configured.

@@ -366,6 +366,13 @@ and runs the harness against the union. Per-spec GATE results are
 attributed back to the source file (so a failure on T02's specs
 shows up as "T02 spec failed" in the platform's review verdict).
 
+> **The gate is fail-closed (agnt-api PRs f1e942b + 03f55aa).** A missing
+> or unreadable per-feature spec file is a **hard** `GATE:<nonce>:{"ok":false,...,"error":"..."}`
+> — not a silent skip. Skipped specs (e.g. spec files the platform
+> can't fetch or parse) are surfaced in the verdict with a reason.
+> If the gate is failing on a "skipped" line, the fix is the spec file
+> itself, not the gate.
+
 If your project has BOTH legacy and task_manager tests (e.g. you're
 migrating), the per-feature pattern takes precedence. The platform
 ignores a top-level `specs.json` if `tests/specs/*.json` exists.
