@@ -31,6 +31,15 @@ platform is the bottleneck."
   "don't claim `*RV` as a builder" rule, and the fallback
   (pick another project from `agnt ready`, or report to the
   user when the platform is the bottleneck).
+- **`agnt-cli-builder/SKILL.md` — On Activation: connected-project
+  early-exit (DX-review follow-up).** Added step 1.5 to the
+  `On Activation` flow: if step 0 connected a project and the
+  project's DAG has zero `scaffold`/`feature` rows with
+  `status != done`, run `npx skills update -y` first (often the
+  unlock), then fall back to global `agnt ready`, and if that's
+  also empty, report to the user. Stops the "should I claim a
+  `*RV`?" debate in the first turn. Source: habitdash DX review
+  (`2026-06-17-habitdash-dx-review.md`), friction item #1.
 - This is a v0.14.3-era follow-up. Habitdash itself is still
   blocked at the platform level (waiting for `generate_general`)
   — no skill change can unstick it; the platform must author

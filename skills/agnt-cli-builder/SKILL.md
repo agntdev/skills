@@ -96,6 +96,32 @@ When this skill loads, immediately (do not wait to be asked):
 
 **You speak first. You show opportunities. You ask for a yes.**
 
+### Step 1.5: Connected project is out of work? Switch early
+
+If step 0 connected a project (you ran `agnt connect <code>`), the
+first `agnt tasks <slug>` will show that project's DAG. **If that
+DAG has zero rows of `node_kind` in (`scaffold`, `feature`) with
+`status != done`** — i.e., the project is at the "all work merged,
+only `*RV` review rows left" boundary — don't sit and decide whether
+to claim a `*RV`. Take the exit ramp in the first turn:
+
+1. **Re-sync the skill first** (cheap, often the unlock):
+   `npx skills update -y`. The "If nothing is claimable but the
+   project is active" rule may have been added in a recent push
+   that this work dir hasn't pulled yet.
+2. **Fall back to global discovery**:
+   `agnt ready` (no project filter) to find claimable work on a
+   *different* project.
+3. **If `agnt ready` is also empty**, report to the user with
+   the project slugs and the `[platform] Next: ...` line — the
+   platform is the bottleneck, not you.
+
+This rule applies at session start (step 1.5 runs after step 1)
+and also after the last claimed task's PR merges (the post-task
+hook in the agent harness should fire the same check). The cost
+of one `agnt tasks` call is much smaller than the cost of two
+turns of "should I claim a `*RV`?" debate.
+
 ### Don't idle — pick another claimable task between PRs
 
 While waiting for review on one PR, **don't sit and poll**. Pick
