@@ -3,9 +3,10 @@ name: telegram-bot-ui
 description: >
   Use when building bot UIs — keyboards, buttons, menus, pagination, dialogs.
   Covers InlineKeyboardMarkup (Bot API), ReplyKeyboardMarkup, callback_data patterns,
-  grammY reply_markup usage, and @agntdev/bot-toolkit UI builders.
+  grammY reply_markup usage, and the inlined toolkit's UI builders (the toolkit
+  lives at src/toolkit/ in the bot-starter template).
   Triggers: inline buttons, keyboard, telegram menu, bot UI, callback buttons, pagination.
-compatibility: Works with grammY alone, or @agntdev/bot-toolkit builders.
+compatibility: Works with grammY alone, or the inlined toolkit builders.
 license: MIT
 ---
 
@@ -203,12 +204,17 @@ pg:prev:<n> / pg:next:<n> — paginate helper
 
 ---
 
-## 3. @agntdev/bot-toolkit — UI Builders
+## 3. The toolkit (`src/toolkit/`) — UI Builders
 
-The toolkit provides **pure builders** that return plain `InlineKeyboardMarkup` objects. No grammY import needed — they produce the exact JSON shapes grammY expects.
+The inlined toolkit (at `src/toolkit/` in the bot-starter template)
+provides **pure builders** that return plain `InlineKeyboardMarkup`
+objects. No grammY import needed — they produce the exact JSON
+shapes grammY expects.
 
 ```ts
-import { inlineButton, urlButton, inlineKeyboard, menuKeyboard, confirmKeyboard, paginate } from "@agntdev/bot-toolkit";
+import {
+  inlineButton, urlButton, inlineKeyboard, menuKeyboard, confirmKeyboard, paginate,
+} from "../src/toolkit/ui/buttons.js";
 ```
 
 ### inlineButton(text, callbackData)

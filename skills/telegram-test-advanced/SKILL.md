@@ -8,7 +8,7 @@ description: >
   from telegram-test-specs.
   Triggers: mock bot dependencies, test error paths, rate limit test, blocked user test,
   programmatic bot test, handleUpdate test, simulate api failure, payment test.
-compatibility: Requires grammY + a test runner (vitest). @agntdev/bot-toolkit for the makeBot() factory.
+compatibility: Requires grammY + a test runner (vitest). The inlined toolkit (at src/toolkit/ in the bot-starter template) for the makeBot() factory.
 license: MIT
 ---
 
@@ -55,7 +55,7 @@ things it **cannot** express push you to programmatic tests:
 
 When you need real code — ordering, exact call counts, computed assertions —
 write a vitest test that drives the bot directly. There is **no test helper in
-`@agntdev/bot-toolkit`**; you hand-roll the same two pieces the harness uses
+the inlined toolkit** (at `src/toolkit/`); you hand-roll the same two pieces the harness uses
 internally: a fake `botInfo` (so grammY skips the `getMe` network call) and a
 capture transformer.
 

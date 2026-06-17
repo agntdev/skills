@@ -5,15 +5,102 @@ changelog is for the skills, not the CLI. Cross-references to the CLI
 ship report live in the ship docs of each cut.
 
 The skill bundle is not yet versioned in the npm sense. We tag the
-git repo (`v0.14.2`, `v0.14.1`, ...) and document tag-scoped install
-in the README. This file records what's in each tag.
+git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
+install in the README. This file records what's in each tag.
 
 ## Unreleased
 
 No unreleased changes. Cut the next version by tagging HEAD after
 your PR merges. See "How to cut" below.
 
+## v0.14.3 (2026-06-17) — revert toolkit to inlined pattern (PR #168)
+
+agnt-api PR #168 (merged 2026-06-17) inlines the toolkit into the
+`agntdev/bot-starter` template (`src/toolkit/`), reversing the
+brief GH-Packages extraction (PR #165) that v0.14.2 was written
+to teach. v0.14.2 said the toolkit ships as `@agntdev/bot-toolkit`
+on GitHub Packages, installed via `.npmrc` + `NODE_AUTH_TOKEN`.
+That's wrong now: the toolkit is **in your repo** at `src/toolkit/`,
+no `.npmrc`, no `NODE_AUTH_TOKEN`, no registry auth, no
+`@agntdev/*` dep. `agntdev/bot-toolkit` is archived.
+
+This cut reverts the v0.14.2 toolkit-related content and documents
+the inlined pattern. Deploy mechanics (`dist/index.js`, BOT_TOKEN,
+REDIS_URL, long-polling) are unaffected. No CLI change.
+
+### What changed
+
+- **`telegram-bot-basics` — revert toolkit import path to local.**
+  All `from "@agntdev/bot-toolkit"` imports rewritten to local
+  relative paths (`../toolkit/...`). §3 header rewritten from
+  "The Wrapper" to "what's already in your repo". Project
+  structure updated: drop `.npmrc`, add `src/toolkit/`,
+  `package.json` deps drop `@agntdev/bot-toolkit`. Common
+  mistakes #7 reverted: "Don't vendor a `.tgz`" is the new
+  directive (the toolkit is already vendored at `src/toolkit/`).
+- **`telegram-bot-deploy` — major rewrite of the toolkit-distribution
+  parts.** The "What" line, §2 (the platform Dockerfile), the
+  bot-starter section, and Common mistakes #9–#11 all rewritten
+  for the inlined pattern. Old §7 (migration to GH Packages)
+  deleted; old §8 (local NODE_AUTH_TOKEN sim) deleted. §3
+  "Strongly recommended" drops the `.npmrc` line. §5 "What NOT
+  to commit" drops the `.tgz` / `.SHA256` rows. Quick Reference
+  table updated. The deploy mechanics (§1, §3 build contract,
+  §4 runtime contract, §5 state, §6 deploy timing) are unchanged.
+- **`telegram-bot-sessions`, `telegram-bot-ui`,
+  `telegram-test-advanced`, `telegram-test-specs`** —
+  compat/frontmatter lines and import references updated
+  from `@agntdev/bot-toolkit` to the inlined toolkit.
+- **`telegram-bot-basics` project structure** — pre-v0.14.3
+  reference block shows the GH-Packages era for historical
+  context.
+- **`agnt-cli-builder`** — no change (build_mode / claim
+  flow / task structure are independent of the toolkit
+  distribution pivot).
+- **`CHANGELOG.md`** — this entry. v0.14.2 becomes a
+  historical note.
+- **`README.md`** — install block updated to point at
+  `v0.14.3`; deploy-skill row description updated.
+
+### Cross-references
+
+- agnt-api PR #168 — `inline-toolkit-into-bot-starter` (merge)
+- agnt-api PR #168 design doc —
+  `docs/superpowers/specs/2026-06-17-inline-toolkit-into-bot-starter-design.md`
+- agnt-api commits `46582c4`, `39c0f51`, `2a6a095`, `cebe3c2`,
+  `1260c06` (PR #165 — the extraction that's now reversed)
+  remain in history but should NOT be referenced as the
+  canonical pattern.
+
+### Files
+
+- `skills/telegram-bot-basics/SKILL.md` — §3, project structure,
+  Common mistakes #7
+- `skills/telegram-bot-deploy/SKILL.md` — major rewrite of
+  toolkit-related sections; deploy mechanics preserved
+- `skills/telegram-bot-sessions/SKILL.md` — frontmatter, §3
+- `skills/telegram-bot-ui/SKILL.md` — frontmatter, §3
+- `skills/telegram-test-advanced/SKILL.md` — frontmatter, §2
+- `skills/telegram-test-specs/SKILL.md` — frontmatter, §5
+- `CHANGELOG.md` — this entry
+- `README.md` — install + table row
+
+### Install
+
+```bash
+# Pin to v0.14.3 (recommended for production)
+npx skills add agntdev/skills/tree/v0.14.3
+
+# Latest (default, tracks main)
+npx skills add agntdev/skills
+```
+
 ## v0.14.2 (2026-06-17) — sync skill with the platform's last week
+
+> **Note:** v0.14.2 was the brief GH-Packages era (PR #165),
+> reversed the same day by PR #168. v0.14.3 is the canonical
+> re-sync. The content below is preserved as historical context
+> for anyone who cloned the repo in the v0.14.2 window.
 
 Post-ship review caught six skill bugs that diverged from the agnt-api
 + agnt-gm.ai changes that landed between v0.14.0 and now.

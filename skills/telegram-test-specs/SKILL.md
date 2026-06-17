@@ -6,7 +6,7 @@ description: >
   BotSpec JSON format, coverage rules, and the test harness CLI.
   Tests are the objective review gate — all specs must pass for the bot to publish.
   Triggers: write bot tests, dialog specs, harness, command coverage.
-compatibility: Requires @agntdev/bot-toolkit test harness.
+compatibility: Requires the inlined test harness (lives at src/toolkit/harness/ in the bot-starter template).
 license: MIT
 ---
 
@@ -245,7 +245,8 @@ Commands are **case-sensitive**: `/Book` and `/book` are different. grammY route
 
 ## 5. Harness CLI
 
-Invoked via `@agntdev/bot-toolkit` CLI:
+Invoked via the inlined harness CLI (built from `src/toolkit/harness/`
+into `dist/toolkit/harness/cli.js` by `npm run build`):
 
 ```
 AGNTDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()

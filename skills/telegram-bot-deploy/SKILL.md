@@ -7,19 +7,21 @@ description: >
   dist/index.js, dist/main.js, BOT_TOKEN_FILE, REDIS_URL, redis, session
   storage, Dockerfile, fly.io, docker compose, VPS, bot container,
   container_state, bot won't start, crash loop, bot starter template,
-  GitHub Packages, NODE_AUTH_TOKEN, .npmrc.
-compatibility: Node 20+, npm. No deploy credentials needed — the platform builds and deploys for you.
+  inlined toolkit, src/toolkit/.
+compatibility: Node 20+, npm. No deploy credentials needed — the platform builds and deploys for you, and the bot-starter template has the toolkit inlined so no registry auth is required.
 license: MIT
 ---
 
 # telegram-bot-deploy Skill
 
-> **New in v0.14.2.** Merged from `origin/feat/telegram-bot-deploy-skill`
-> (Volodya's branch, commit `37102ef`, 2026-06-12) and updated for the
-> toolk­it-extraction cutover (agnt-api PR #165): the bot starter template
-> `agntdev/bot-starter`, GitHub Packages install, and `dist/index.js`
-> as the canonical entry point. The `.agntdev-bot-toolkit.tgz` vendoring
-> pattern is gone.
+> **New in v0.14.2, re-cut in v0.14.3.** Merged from
+> `origin/feat/telegram-bot-deploy-skill` (Volodya's branch, commit
+> `37102ef`, 2026-06-12). v0.14.2 documented the brief GitHub
+> Packages install pattern; v0.14.3 re-cuts to the **inlined-toolkit**
+> pattern (agnt-api PR #168): the bot-starter template
+> `agntdev/bot-starter` ships the toolkit at `src/toolkit/`, no
+> `.npmrc`, no `NODE_AUTH_TOKEN`, no registry auth. The brief
+> v0.14.2 GH-Packages era is reversed.
 
 How the agntdev platform deploys your bot repo — and exactly what the repo
 must (and must not) contain for that to work.
@@ -41,10 +43,9 @@ deploy workflow, no flyctl, no SSH. The platform:
 ```dockerfile
 FROM node:20-slim
 WORKDIR /app
-# .npmrc (committed in the bot repo) maps @agntdev → GitHub Packages and reads
-# NODE_AUTH_TOKEN from the build environment. Authenticated install of
-# @agntdev/bot-toolkit (the published GH Packages package).
-COPY package*.json .npmrc ./
+# No .npmrc, no NODE_AUTH_TOKEN — the toolkit is inlined at src/toolkit/,
+# so npm install only resolves public packages (grammy, ioredis).
+COPY package*.json ./
 RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 COPY . .
 RUN npm run build
@@ -56,12 +57,10 @@ CMD ["sh", "-c", "if [ -f dist/index.js ]; then exec node dist/index.js; elif [ 
    on Fly.io (256 MB) or a platform VPS via docker compose (512 MB).
 4. Injects the BotFather token (secret) and `REDIS_URL` at runtime. The
    token is never in the repo, the image, or the build log.
-5. `NODE_AUTH_TOKEN` is injected at build time so the GH Packages install
-   of `@agntdev/bot-toolkit` resolves cleanly. The token is never in the
-   image, only in the build cache.
 
-Everything you control lives in `package.json`, your source tree, and the
-committed `.npmrc` (one line: `@agntdev:registry=https://npm.pkg.github.com`).
+Everything you control lives in `package.json` and your source tree.
+No registry auth needed — the bot-starter template's `src/toolkit/`
+ships the toolkit in your repo.
 
 **MVP stack is fixed: Node.js + grammY + Redis.** No SQL, no SQLite, no
 ORM — SQL support comes post-MVP.
@@ -71,26 +70,27 @@ ORM — SQL support comes post-MVP.
 Every new bot is created from the **`agntdev/bot-starter` template repo**
 (GitHub template, marked `isTemplate: true`). The platform's provisioner
 seeds the new bot repo from this template on project creation, so you start
-with a bootable skeleton — T01's task is **extend the skeleton**, not
-"create from scratch".
+with a bootable, **self-contained** skeleton — T01's task is **extend
+the skeleton**, not "create from scratch".
 
 The skeleton already contains:
 
-- `package.json` with `"@agntdev/bot-toolkit": "^0.1.0"` (semver range, resolved from GH Packages) and `"grammy"` as a peer
+- `package.json` with `"grammy"` and `"ioredis"` as deps (no `@agntdev/*` packages)
 - `src/bot.ts` — `buildBot()` factory (testable)
 - `src/index.ts` — runtime entry (long-polling loop, calls `bot.start()`)
 - `src/harness-entry.ts` — `makeBot()` for the tests gate (the harness imports this)
+- `src/toolkit/` — the inlined toolkit (createBot, MemorySessionStorage,
+  UI builders, test harness). Source lives in your repo; no install needed.
 - `Dockerfile` — actually **ignored** by the platform; commit a stub if you want, or skip
 - `AGENTS.md` — anti-stub contract (PR #161: specs are strict, no `// TODO` placeholders)
-- `.npmrc` — `@agntdev:registry=https://npm.pkg.github.com` + the auth-token line
 - `tests/specs/start.json` — the `/start` command spec
 - `tests/commands.json` — declared command list for the coverage gate
 
 If you're starting a bot **not** from the platform's "create project" flow
 (TMA), you can still use the template: `gh repo create <bot> --template agntdev/bot-starter`.
 
-If you have an existing bot repo (pre-template), see [§7. Migrating from
-the old vendoring model](#7-migrating-from-the-old-vendoring-model).
+If you have an existing bot repo (pre-inlined-toolkit), see [§7.
+Distribution history](#7-distribution-history) for the migration steps.
 
 ## 3. The Build Contract
 
@@ -106,8 +106,11 @@ Your repo MUST satisfy all four, or the deploy fails:
 Strongly recommended:
 
 - **Commit `package-lock.json`** — gets you reproducible `npm ci` instead of `npm install`.
-- **Commit `.npmrc`** (one line: `@agntdev:registry=https://npm.pkg.github.com`) — without it, `npm install` of `@agntdev/bot-toolkit` will fail at build time. The platform's `NODE_AUTH_TOKEN` makes the install authenticated.
-- **Do NOT commit `.agntdev-bot-toolkit.tgz`** — the old vendoring pattern is gone. `@agntdev/bot-toolkit` is published to GH Packages, semver-pinned in `package.json`.
+- **Do NOT commit `.npmrc`** — no registry auth is needed. The toolkit is
+  in your repo at `src/toolkit/`; `npm install` only resolves public
+  packages (`grammy`, `ioredis`).
+- **Do NOT commit `.agntdev-bot-toolkit.tgz`** — that file pattern is
+  gone. The toolkit is in your repo at `src/toolkit/`.
 
 Typical `package.json` + `tsconfig.json` shape:
 
@@ -118,8 +121,8 @@ Typical `package.json` + `tsconfig.json` shape:
   "scripts": { "build": "tsc -p tsconfig.json" },
   "engines": { "node": ">=20" },
   "dependencies": {
-    "@agntdev/bot-toolkit": "^0.1.0",
-    "grammy": "^1.x"
+    "grammy": "^1.x",
+    "ioredis": "^5.x"
   }
 }
 // tsconfig.json: "outDir": "dist", "rootDir": "src" — and your entry is src/index.ts
@@ -223,7 +226,7 @@ put real data in Redis, not in module-level `Map`s.
 | `agnt-deploy.json` | Consulted only for **web/site** deploys (Cloudflare), never for the bot image. |
 | `.env`, token files | Token is platform-injected. `.gitignore` already covers these. |
 | `fly.toml` | Generated by the platform per deploy. |
-| `.agntdev-bot-toolkit.tgz` / `.SHA256` | Old vendoring pattern (pre-PR #165). Don't commit. `@agntdev/bot-toolkit` is published to GH Packages; `package.json` semver range resolves it at install time. |
+| `.agntdev-bot-toolkit.tgz` / `.SHA256` | Old vendoring pattern (pre-PR #168). Don't commit. The toolkit is in your repo at `src/toolkit/`. |
 
 A plain **CI** workflow (build + test on PR/push, no secrets, no deploy
 step) is fine and encouraged.
@@ -240,62 +243,49 @@ step) is fine and encouraged.
 - Build failures surface in the platform's deploy log, not in your CI.
   The most common are exactly the contract violations in §3.
 
-## 7. Preflight — Simulate the Platform Build Locally
+## 7. Distribution history
 
-Run this before your final PR; it's what the pipeline will do:
+Three patterns the platform has used, in chronological order:
 
-```bash
-rm -rf node_modules dist
-if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-npm run build
-test -f dist/index.js && echo "OK: dist/index.js exists" || echo "FAIL: no dist/index.js"
-docker run -d --rm -p 6379:6379 --name preflight-redis redis:7-alpine
-BOT_TOKEN=000000:TEST REDIS_URL=redis://localhost:6379 node dist/index.js
-# must reach grammY start — a 401 from Telegram means the wiring is OK
-docker stop preflight-redis
-```
+- **pre-v0.14.0 — vendored `.tgz`**: each bot committed
+  `.agntdev-bot-toolkit.tgz` + `.SHA256` + `THIRD_PARTY.md` and used
+  `"@agntdev/bot-toolkit": "file:./.agntdev-bot-toolkit.tgz"` in
+  `package.json`. The build container needed to carry the vendored
+  files in.
+- **v0.14.2 (2026-06-17, one day) — GH Packages install**:
+  `@agntdev/bot-toolkit` published to GitHub Packages, installed via
+  `.npmrc` + `NODE_AUTH_TOKEN`. Reverted the same day (PR #168)
+  because the auth path was finicky and the package bought no
+  versioning for disposable MVP bots.
+- **v0.14.3+ — inlined in `src/toolkit/`**: the bot-starter template
+  ships the toolkit source in the bot repo. No `.npmrc`, no
+  `NODE_AUTH_TOKEN`, no registry auth, no `@agntdev/*` deps. This is
+  canonical. `agntdev/bot-toolkit` is archived (reversible).
 
-To simulate the GH Packages install locally, set `NODE_AUTH_TOKEN` to a
-`read:packages` GitHub PAT (your own; the platform's token is per-deploy).
-
-## 8. Migrating from the Old Vendoring Model
-
-If your repo predates the v0.14.2 cut and still uses the `.tgz` pattern:
+If you see a bot with a `.npmrc` referencing `@agntdev` or a
+`package.json` with `@agntdev/bot-toolkit`, it's a v0.14.2 artifact.
+The cleanup is the inverse of the v0.14.2 cut:
 
 ```diff
 # package.json
 - "dependencies": {
--   "@agntdev/bot-toolkit": "file:./.agntdev-bot-toolkit.tgz"
+-   "@agntdev/bot-toolkit": "^0.1.0"
 - }
 + "dependencies": {
-+   "@agntdev/bot-toolkit": "^0.1.0"
++   "grammy": "^1.x",
++   "ioredis": "^5.x"
 + }
 ```
 
 ```diff
-# .npmrc (NEW FILE — one line)
-+ @agntdev:registry=https://npm.pkg.github.com
-+ //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+# .npmrc (DELETE FILE)
+- @agntdev:registry=https://npm.pkg.github.com
+- //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
-```diff
-# .gitignore
-- !.agntdev-bot-toolkit.tgz
-- !.agntdev-bot-toolkit.SHA256
-- !THIRD_PARTY.md
-```
-
-```diff
-# src/main.ts → src/index.ts
-# (rename the file; update package.json "main" if it's set)
-```
-
-After the change:
-- `rm -f .agntdev-bot-toolkit.tgz .agntdev-bot-toolkit.SHA256 THIRD_PARTY.md`
-- `git add package.json .npmrc .gitignore src/index.ts`
-- `git commit -m "feat: migrate to GH Packages toolkit (v0.14.2)"`
-
-The platform will pick up the new install path on the next deploy.
+After that, `src/toolkit/` is already in the bot (from the
+bot-starter template). The platform deploys with `npm ci` (no auth)
+on the next push.
 
 ## Common Mistakes
 
@@ -307,23 +297,23 @@ The platform will pick up the new install path on the next deploy.
 6. **Hardcoding `redis://localhost`** — always read `process.env.REDIS_URL`; localhost is only the dev fallback.
 7. **Missing `build` script** — `RUN npm run build` fails the image build even for plain JS.
 8. **Third-party API calls at runtime** — egress proxy allows api.telegram.org only (VPS path); Redis is internal and unaffected.
-9. **Vendoring `.agntdev-bot-toolkit.tgz`** — gone. The toolkit is on GH Packages; if you see a `file:./.agntdev-bot-toolkit.tgz` line in `package.json`, migrate to `^0.1.0` + `.npmrc` (see §8).
-10. **Missing `.npmrc`** — without it, `npm install` of `@agntdev/bot-toolkit` will 401 at build time. The platform's `NODE_AUTH_TOKEN` is not enough; the `.npmrc` line is what tells npm which registry to use.
+9. **Adding `@agntdev/bot-toolkit` to `package.json`** — that package is archived. The toolkit is in your repo at `src/toolkit/`; just import from it. If your `package.json` still has it, you're looking at a v0.14.2 bot — see §7.
+10. **Adding a `.npmrc` for `@agntdev`** — no such registry needed. The toolkit isn't a package; `npm install` only resolves public deps. A `.npmrc` referencing `@agntdev` is a v0.14.2 artifact — see §7.
 
 ## Quick Reference
 
 ```text
 Stack (MVP)              Node 20 + grammY + Redis — no SQL
 Bot starter              agntdev/bot-starter (template repo, creates your bot)
-Toolkit install          npm install @agntdev/bot-toolkit (from GH Packages, semver range)
-.npmrc (required)        @agntdev:registry=https://npm.pkg.github.com
+Toolkit                  src/toolkit/ inlined in the bot repo (no install, no auth)
+.npmrc                   NOT needed (no registry auth; toolkit is local)
 Repo must provide        package.json + "build" script → dist/index.js (Node 20)
 Legacy entry accepted    dist/main.js, bare index.js (for pre-v0.14.2 bots)
 Token                    resolveBotToken(): BOT_TOKEN || read(BOT_TOKEN_FILE)
 Mode                     long polling (bot.start()), no ports, no webhook
 State                    Redis via REDIS_URL (@grammyjs/storage-redis), /tmp scratch only
 Do not commit            Dockerfile, deploy workflows, agnt-deploy.json, fly.toml, .env,
-                         .agntdev-bot-toolkit.tgz, .SHA256, THIRD_PARTY.md
+                         .agntdev-bot-toolkit.tgz, .SHA256, .npmrc (for @agntdev)
 CI allowed               build/test only, no deploy step
 Verify locally           npm ci && npm run build && test -f dist/index.js
 Live state               agnt bot show <project>   → container_state
@@ -331,8 +321,11 @@ Live state               agnt bot show <project>   → container_state
 
 ## Cross-references
 
-- agnt-api PR #165 — bot-toolkit extraction to GitHub Packages
+- agnt-api PR #168 — inline-toolkit-into-bot-starter (merge)
+- agnt-api PR #168 design doc —
+  `docs/superpowers/specs/2026-06-17-inline-toolkit-into-bot-starter-design.md`
+- agnt-api PR #165 — bot-toolkit extraction (reversed, historical)
 - `docker/agntdev-ci/README.md` in agnt-api — the gate's contract
 - `docker/fly-deploy/deploy.sh` in agnt-api — the actual deploy script
-- `agntdev/bot-starter` — the template repo
-- `@agntdev/bot-toolkit` on GitHub Packages — the published package
+- `agntdev/bot-starter` — the template repo (canonical source of the inlined toolkit)
+- `agntdev/bot-toolkit` — **archived** (replaced by `src/toolkit/`)

@@ -26,7 +26,7 @@ The role split is strict:
 | [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — `MemorySessionStorage`, SQLite adapter (preview), session design, migrations |
 | [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — `BotSpec` format, `SendShorthand`, `ExpectedCall`, subsequence matching, coverage gate |
 | [telegram-test-advanced](./skills/telegram-test-advanced/SKILL.md) | Programmatic tests — dependency injection, error-path simulation, edge-case Update fixtures. The escape hatch when BotSpec JSON runs out of road. |
-| [telegram-bot-deploy](./skills/telegram-bot-deploy/SKILL.md) | Platform deploy contract — `dist/index.js`, BOT_TOKEN/BOT_TOKEN_FILE, long-polling vs webhook, REDIS_URL, the `agntdev/bot-starter` template, GH Packages install |
+| [telegram-bot-deploy](./skills/telegram-bot-deploy/SKILL.md) | Platform deploy contract — `dist/index.js`, BOT_TOKEN/BOT_TOKEN_FILE, long-polling vs webhook, REDIS_URL, the `agntdev/bot-starter` template with inlined `src/toolkit/`, no registry auth |
 
 ## Structure
 
@@ -64,7 +64,7 @@ The skill bundle is published at [`agntdev/skills`](https://github.com/agntdev/s
 
 ```bash
 # Pin to a specific version (recommended for production / CI)
-npx skills add agntdev/skills/tree/v0.14.2
+npx skills add agntdev/skills/tree/v0.14.3
 
 # Latest (default, tracks main — only safe if you're on a single version of the platform)
 npx skills add agntdev/skills
@@ -74,9 +74,9 @@ See [CHANGELOG.md](./CHANGELOG.md) for what's in each version. Tag-scoped instal
 
 ## Versioning
 
-The skill bundle is not versioned in the npm sense. We tag the `agntdev-skills` git repo (`v0.14.0`, `v0.14.1`, `v0.14.2`, ...) and the tag-scoped `npx skills add` URL is the install contract. The CLI (`@agntdev/cli`) has its own version; the skills and CLI share a major.minor by convention but the patch is independent — `agnt-cli@0.14.0` (CLI) + `v0.14.2` (skills) is a normal combination.
+The skill bundle is not versioned in the npm sense. We tag the `agntdev-skills` git repo (`v0.14.0`, `v0.14.1`, `v0.14.2`, `v0.14.3`, ...) and the tag-scoped `npx skills add` URL is the install contract. The CLI (`@agntdev/cli`) has its own version; the skills and CLI share a major.minor by convention but the patch is independent — `agnt-cli@0.14.1` (CLI) + `v0.14.3` (skills) is a normal combination.
 
-Tags are **lightweight** (not annotated) and follow semver. Patches are skills-only fixes (sync bugs, typo, missing reference). Minors are skill additions or new platform surfaces. Majors are reserved for backward-incompatible contract changes (we have not had one yet).
+Tags are **lightweight** (not annotated) and follow semver. Patches are skills-only fixes (sync bugs, typo, missing reference). Minors are skill additions or new platform surfaces. Majors are reserved for backward-incompatible contract changes (we have not had one yet). v0.14.3 is a patch (revert of v0.14.2's toolkit-to-GH-Packages content) — same major.minor as the previous cut.
 
 ## License
 

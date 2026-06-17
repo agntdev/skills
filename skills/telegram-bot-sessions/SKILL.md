@@ -3,9 +3,10 @@ name: telegram-bot-sessions
 description: >
   Use when implementing user session persistence in a Telegram bot.
   Covers Bot API's stateless nature, grammY session plugin + StorageAdapter,
-  and @agntdev/bot-toolkit MemorySessionStorage + harness isolation.
+  and the inlined toolkit's MemorySessionStorage + harness isolation
+  (the toolkit lives at src/toolkit/ in the bot-starter template).
   Triggers: session, persistence, bot state, user state, conversation flow.
-compatibility: Works with grammY sessions alone, or @agntdev/bot-toolkit for defaults.
+compatibility: Works with grammY sessions alone, or the inlined toolkit for defaults.
 license: MIT
 ---
 
@@ -130,14 +131,16 @@ Built-in options:
 
 ---
 
-## 3. @agntdev/bot-toolkit — Session Defaults
+## 3. The toolkit (`src/toolkit/`) — Session Defaults
 
 ### MemorySessionStorage
 
-The toolkit ships `MemorySessionStorage` — a grammY-compatible `StorageAdapter` backed by `Map`.
+The inlined toolkit (at `src/toolkit/` in the bot-starter template)
+ships `MemorySessionStorage` — a grammY-compatible `StorageAdapter`
+backed by `Map`.
 
 ```ts
-import { MemorySessionStorage } from "@agntdev/bot-toolkit";
+import { MemorySessionStorage } from "../src/toolkit/storage/memory.js";
 
 // Implements StorageAdapter:
 const store = new MemorySessionStorage<SessionData>();
@@ -206,7 +209,7 @@ Spec 2 ("cancel flow"):
 For production bots, swap to SQLite (same StorageAdapter interface, same bot code):
 
 ```ts
-import { SqliteSessionStorage } from "@agntdev/bot-toolkit/sqlite"; // planned
+import { SqliteSessionStorage } from "../src/toolkit/storage/sqlite.js"; // planned
 
 const bot = createBot<Session>(token, {
   initial: () => ({ step: "idle" }),
