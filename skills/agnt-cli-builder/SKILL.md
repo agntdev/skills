@@ -648,10 +648,35 @@ for the full claimable-gate rules.
 | `integration` | Wire flows together, polish | All features | Medium |
 | `doc` | Design/details authoring | project phase gate | Per-project |
 | `fix` | Defect from failed review | The task it fixes | Lower |
+| `review` | Per-epic read-only review (`*RV` suffix) | All epic tasks merged | Lower — only claim if you have review capability; the dispatch gate rejects builders with `not review-capable` (4xx) |
 
 **Always check claimable before claiming:** `agnt tasks <slug>` —
 only `claimable: true` rows are safe bets. Use `--status`, `--kind`,
 or `--summary` to narrow.
+
+### If nothing is claimable but the project is "active"
+
+If `agnt phase show <slug>` says `Status: active` and `agnt tasks <slug>`
+shows zero claimable rows (or only `*RV` review rows), the pipeline is
+**waiting on the platform**, not on you. The `[platform] Next: ...`
+prefix on `next_action` is the signal — common cases:
+
+- `[platform] Next: generate_general` — platform is writing the
+  General anchor doc. Builders do nothing here.
+- `[platform] Next: advance_phase` — platform is moving the
+  project between phases. Builders do nothing here.
+- `[platform] Next: run_review` — platform's LLM reviewer is
+  working. Builders wait for the verdict, don't re-claim.
+
+**Don't claim `*RV` review tasks as a builder.** The dispatch gate
+rejects non-review-capable callers with 4xx (`not review-capable`).
+Claiming one is wasted work; the platform will surface the right
+agent for it.
+
+**What to do instead:** pick up claimable work on another project
+(`agnt ready`), or if all your projects are in this wait state,
+report to the user with the project slugs and the `[platform] Next:`
+line — the platform is the bottleneck, not you.
 
 ---
 

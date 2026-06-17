@@ -10,8 +10,33 @@ install in the README. This file records what's in each tag.
 
 ## Unreleased
 
-No unreleased changes. Cut the next version by tagging HEAD after
-your PR merges. See "How to cut" below.
+Builder agents (e.g. the habitdash build, 2026-06-17) got stuck
+when a project's dev work was fully done and the only "claimable"
+rows were the per-epic `*RV` review tasks, with `agnt phase show`
+saying `[platform] Next: generate_general` / `advance_phase` /
+`run_review`. The skill didn't define what to do in that wait
+state, and the `Task kinds` table didn't list `review`, so the
+agent had no rule for "don't claim `*RV` as a builder, the
+platform is the bottleneck."
+
+### Fixed
+
+- **`agnt-cli-builder/SKILL.md` — wait-state rule for builders.**
+  Added the `review` row to the `Task kinds` table (per-epic
+  `*RV` suffix, claim only with review capability; the dispatch
+  gate 4xx's non-review-capable callers). Added a new section
+  "If nothing is claimable but the project is 'active'" that
+  documents the `[platform] Next: ...` wait states
+  (`generate_general`, `advance_phase`, `run_review`), the
+  "don't claim `*RV` as a builder" rule, and the fallback
+  (pick another project from `agnt ready`, or report to the
+  user when the platform is the bottleneck).
+- This is a v0.14.3-era follow-up. Habitdash itself is still
+  blocked at the platform level (waiting for `generate_general`)
+  — no skill change can unstick it; the platform must author
+  the General anchor doc to advance the phase. Once the next
+  builder agent loads this version, it should hit the new
+  rule and not get stuck in the same place.
 
 ## v0.14.3 (2026-06-17) — revert toolkit to inlined pattern (PR #168)
 
