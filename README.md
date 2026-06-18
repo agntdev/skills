@@ -21,8 +21,10 @@ The role split is strict:
 | Skill | What it does |
 |---|---|
 | [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | The meta-skill. Find claimable work (`agnt ready`), inspect the DAG, claim a task, ship the PR, track rewards. The single entry point for the agntdev builder surface. |
-| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with `createBot()` — command routing, callbacks, `makeBot()` factory, project structure |
-| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI kit: `inlineButton`, `urlButton`, `menuKeyboard`, `confirmKeyboard`, `paginate`, callback routing |
+| [agnt-cli-builder](./skills/agnt-cli-builder/SKILL.md) | The meta-skill. Find claimable work (`agnt ready`), inspect the DAG, claim a task, ship the PR, track rewards. The single entry point for the agntdev builder surface. |
+| [telegram-bot-basics](./skills/telegram-bot-basics/SKILL.md) | Build bots with `createBot()` — command routing, callbacks, `makeBot()` factory, project structure, **Bot API limits** (callback_data 64 bytes, message 4096), **parse_mode** (HTML/MarkdownV2), **Rich Messages** (10.1), **Checklists** (9.1), chat types, media |
+| [telegram-bot-ui](./skills/telegram-bot-ui/SKILL.md) | UI mechanics: `inlineButton`, `urlButton`, `copyTextButton`, `webAppButton`, `menuKeyboard`, `confirmKeyboard`, `paginate`, `ForceReply`, callback routing, RequestContact/Location/User/Chat |
+| [telegram-bot-ux](./skills/telegram-bot-ux/SKILL.md) | UX rules: microcopy, button labels, error messages, loading state, **flow patterns** (wizard/branching/search-then-pick/multi-step/undo/checklist/rich-message/streaming-AI), onboarding, Mini App graduation, anti-patterns |
 | [telegram-bot-sessions](./skills/telegram-bot-sessions/SKILL.md) | Session persistence — `MemorySessionStorage`, SQLite adapter (preview), session design, migrations |
 | [telegram-test-specs](./skills/telegram-test-specs/SKILL.md) | Dialog test specs — `BotSpec` format, `SendShorthand`, `ExpectedCall`, subsequence matching, coverage gate |
 | [telegram-test-advanced](./skills/telegram-test-advanced/SKILL.md) | Programmatic tests — dependency injection, error-path simulation, edge-case Update fixtures. The escape hatch when BotSpec JSON runs out of road. |
@@ -37,10 +39,16 @@ skills/
     references/
       COMMANDS.md            # auto-generated from oclif manifest
       REFERENCE.md           # claimable-gate rules, exit codes, env vars
-  telegram-bot-basics/       # createBot(), makeBot(), routing, callbacks
+  telegram-bot-basics/       # createBot(), makeBot(), routing, callbacks,
+                             # Bot API limits, parse_mode, Rich Messages,
+                             # Checklists, chat types, media, webhook
     SKILL.md
-  telegram-bot-ui/           # inlineButton, menuKeyboard, paginate, confirmKeyboard
+  telegram-bot-ui/           # inlineButton, menuKeyboard, paginate, confirmKeyboard,
+                             # copyTextButton, webAppButton, ForceReply, RequestContact
     SKILL.md
+  telegram-bot-ux/           # Microcopy, flow patterns, error UX, loading UX,
+                             # onboarding, Mini App graduation, anti-patterns
+    SKILL.md                 # NEW in v0.16.0
   telegram-bot-sessions/     # MemorySessionStorage, SQLite, migrations
     SKILL.md
   telegram-test-specs/       # BotSpec, SendShorthand, coverage, harness CLI
@@ -64,7 +72,7 @@ The skill bundle is published at [`agntdev/skills`](https://github.com/agntdev/s
 
 ```bash
 # Pin to a specific version (recommended for production / CI)
-npx skills add agntdev/skills/tree/v0.15.0
+npx skills add agntdev/skills/tree/v0.16.0
 
 # Latest (default, tracks main — only safe if you're on a single version of the platform)
 npx skills add agntdev/skills

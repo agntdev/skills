@@ -8,6 +8,110 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.16.0 (2026-06-18) — UX split, Bot API 10.1 ground-truth
+
+**Goal.** Split the overloaded `telegram-bot-ui` into mechanics vs
+UX, ground the bundle in current Bot API ground truth (10.1 just
+landed — Rich Messages, Checklists, Guest Mode, Live Photo), and
+teach flow patterns explicitly. No bot-starter template change, no
+new dependencies, no CLI bump.
+
+**Why.** Two problems in last week's bot builds:
+1. `telegram-bot-ui` was 453 lines carrying mechanics + patterns +
+   copy + error UX + anti-patterns. Builders couldn't find what they
+   needed; trigger-fuzzy and read on demand.
+2. Bundle reflected pre-9.1 era. Bot API 10.1 (one week old) added
+   Rich Messages, `sendRichMessageDraft` (streaming AI UX), Checklists.
+   Builders reinvented both badly or skipped them entirely.
+
+### What changed (skill bundle)
+
+- **`telegram-bot-ux/SKILL.md`** — NEW. ~600 lines. Microcopy,
+  error UX, loading UX (incl. `sendRichMessageDraft` streaming),
+  media UX, chat-type UX (group privacy mode, topics, Guest Mode),
+  flow patterns (linear wizard, branching menu, search-then-pick,
+  multi-step form, undo, checklist, rich message, streaming AI —
+  all session-FSM, no library), onboarding, Mini App graduation
+  (4 explicit thresholds), performance budgets (300ms / 5 rows iOS
+  / 4 cols desktop), 20 anti-patterns with reasoning, 21-item UX
+  review checklist.
+- **`telegram-bot-basics/SKILL.md`** — expanded. Added §4 limits
+  (callback_data 64 BYTES, message 4096, caption 1024, 100 buttons
+  / 8 rows, 50 inline query results, etc.), §5 parse_mode (default
+  HTML, MarkdownV2 18-char escape), §6 entities (incl. blockquote,
+  spoiler, custom emoji), §7 Rich Messages (Bot API 10.1 — section
+  heading / divider / footer / table / details / map / thinking
+  blocks, `sendRichMessageDraft` streaming), §8 Checklists
+  (Bot API 9.1 — `sendChecklist`, `editMessageChecklist`), §9 chat
+  types matrix (private / group / supergroup / channel, privacy mode,
+  topics, Guest Mode), §10 inline button types (incl. `copy_text`,
+  `web_app`), §11 media types with size limits, §12 webhook contract.
+  Quick Reference table now covers limits + entities. Common
+  mistakes now include `BUTTON_DATA_INVALID` (non-ASCII callback_data
+  >30 chars) and HTML escape-order bug.
+- **`telegram-bot-ui/SKILL.md`** — tightened. 453 → ~280 lines.
+  Pure mechanics only: keyboard types, attach syntax, ForceReply,
+  `RequestContact`/`RequestLocation`/`RequestUser`/`RequestChat`/
+  `RequestManagedBot` custom-keyboard buttons, `copyTextButton`,
+  `webAppButton`, callback routing, builders, edit-in-place. §4
+  stateful flow examples moved to `telegram-bot-ux` §6. Microcopy
+  tips moved to `telegram-bot-ux` §1. Error UX moved to
+  `telegram-bot-ux` §2. Common mistakes now include 64-byte
+  callback_data, ForceReply without step filter, Desktop 5.3.2
+  `resize_keyboard` quirk, missing `input_field_placeholder`.
+- **`README.md`** — install block bumped to `v0.16.0`; skills table
+  re-ordered (basics → ui → ux → sessions → deploy → tests) and
+  expanded with one-line description for each. Structure tree
+  reflects the new ux/ subdir.
+
+### Scope decisions (deliberate)
+
+- **No CLI bump.** `@agntdev/cli` stays at `0.15.1`. Per README
+  versioning rules, skills and CLI share a major.minor but the
+  patch level is independent; no CLI behavior change → no bump.
+- **No bot-starter template change.** Builders consume the new
+  content next time they claim a task. Old bots keep running.
+- **No new dependencies.** We use `ctx.session.step` (already in
+  `telegram-bot-sessions`) for flow patterns. No `grammy-fsm` or
+  `grammy-scenes` — the bot-starter template depends only on
+  `grammy` + `ioredis`.
+- **No `telegram-test-specs` UX assertions** (e.g.
+  `expect_at_most_messages`). Explicit veto from the user — keep
+  test-specs focused on API-call coverage.
+- **No archetype skills** (booking / todo / FAQ reference bots).
+  Explicit veto from the user — flow patterns in ux §6 cover the
+  ground.
+- **No standalone `telegram-bot-flow-patterns` skill.** Folded into
+  `telegram-bot-ux` §6.
+
+### Cross-references
+
+- `telegram-bot-basics` ↔ `telegram-bot-ui` (limits + parse_mode
+  ↔ button mechanics)
+- `telegram-bot-basics` ↔ `telegram-bot-ux` (entities + Rich
+  Messages ↔ copy + flow)
+- `telegram-bot-ui` ↔ `telegram-bot-ux` (wire buttons ↔ what to
+  write on them)
+
+### Files
+
+- 1 new file: `skills/telegram-bot-ux/SKILL.md` (~600 lines)
+- 3 modified: `skills/telegram-bot-basics/SKILL.md` (+9 sections,
+  ~180 net lines), `skills/telegram-bot-ui/SKILL.md` (-173 net
+  lines, +new builders), `README.md`
+- 1 changelog entry: this one
+
+Net delta: +610 lines. Bundle grows from ~3024 to ~3630 lines.
+
+### Install
+
+```bash
+# Pin to v0.16.0 (recommended for production)
+npx skills add agntdev/skills/tree/v0.16.0
+```
+
+---
+
 ## Unreleased
 
 No unreleased changes. Cut the next version by tagging HEAD after

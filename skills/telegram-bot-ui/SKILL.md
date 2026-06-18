@@ -1,33 +1,45 @@
 ---
 name: telegram-bot-ui
 description: >
-  Use when building bot UIs — keyboards, buttons, menus, pagination, dialogs.
-  Covers InlineKeyboardMarkup (Bot API), ReplyKeyboardMarkup, callback_data patterns,
-  grammY reply_markup usage, and the inlined toolkit's UI builders (the toolkit
-  lives at src/toolkit/ in the bot-starter template).
-  Triggers: inline buttons, keyboard, telegram menu, bot UI, callback buttons, pagination.
-compatibility: Works with grammY alone, or the inlined toolkit builders.
+  Use when wiring Telegram keyboards — inline buttons, callback routing,
+  reply_markup, grammY attach syntax, the inlined toolkit's UI builders
+  (inlineButton, urlButton, inlineKeyboard, menuKeyboard, confirmKeyboard,
+  paginate), ForceReply markup, custom keyboards for typed input
+  (RequestContact, RequestLocation, RequestUser, RequestChat,
+  RequestManagedBot), copy_text buttons, web_app buttons.
+  Covers mechanics only — for microcopy, flow patterns, error UX,
+  onboarding, anti-patterns, see telegram-bot-ux.
+  Triggers: inline buttons, keyboard, telegram menu, bot UI, callback
+  buttons, pagination, reply_markup, ForceReply, copy_text, web_app.
+compatibility: Works with grammY alone, or the inlined toolkit builders
+  (at src/toolkit/ui/ in the bot-starter template).
 license: MIT
 ---
 
 # telegram-bot-ui Skill
 
-How to build bot UIs — from raw Bot API keyboard JSON to grammY to toolkit builders.
+How to wire Telegram keyboards — pure mechanics. For **what the bot
+should say and how it should feel**, see
+[telegram-bot-ux](../telegram-bot-ux/SKILL.md).
 
 > **Built for the agntdev pipeline.** See
-> [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the discovery-and-claim
-> loop. This skill teaches the inline-button, menu, paginate, and
-> confirmKeyboard patterns you use in your claimed task's implementation.
+> [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the
+> discovery-and-claim loop. This skill teaches the inline-button, menu,
+> paginate, confirmKeyboard, ForceReply, and copy_text patterns you use
+> in your claimed task's implementation.
 
 ---
 
 ## 1. How Telegram Keyboards Work (Bot API)
 
-Telegram has **two keyboard types** — different use cases, different JSON shapes.
+Telegram has **two keyboard types** + several markup variants for
+special inputs. Different use cases, different JSON shapes.
 
 ### InlineKeyboardMarkup
 
-Buttons attached to a **specific message**. Tapping sends a `callback_query` back to your bot (no message to chat). Good for menus, confirmations, pagination.
+Buttons attached to a **specific message**. Tapping sends a
+`callback_query` back to your bot (no message to chat). Good for menus,
+confirmations, pagination.
 
 ```json
 // Attached to sendMessage reply_markup field
@@ -46,9 +58,17 @@ Buttons attached to a **specific message**. Tapping sends a `callback_query` bac
 
 Tap "Yes" → bot receives `callback_query` with `data: "confirm:42:yes"`.
 
+Limits (see [telegram-bot-basics](../telegram-bot-basics/SKILL.md) §4):
+
+- `callback_data` ≤ **64 BYTES** (UTF-8). Cyrillic / emoji = multi-byte.
+- ≤ 100 buttons per keyboard.
+- ≤ 8 rows (iOS scrolls at ~5).
+- Button text ≤ ~64 chars (truncated otherwise; keep ≤24 on mobile).
+
 ### ReplyKeyboardMarkup
 
-**Persistent** buttons that replace the user's keyboard. Tapping sends a regular text message. Good for persistent menus, quick replies.
+**Persistent** buttons that replace the user's keyboard. Tapping sends
+a regular text message. Good for persistent menus, quick replies.
 
 ```json
 {
@@ -56,20 +76,40 @@ Tap "Yes" → bot receives `callback_query` with `data: "confirm:42:yes"`.
     [{ "text": "📅 Book" }, { "text": "📋 My bookings" }],
     [{ "text": "❌ Cancel" }]
   ],
-  "resize_keyboard": true
+  "resize_keyboard": true,
+  "one_time_keyboard": false,
+  "input_field_placeholder": "Type or tap…",
+  "selective": false
 }
 ```
 
-Tap "📅 Book" → bot receives a message with `text: "📅 Book"`.
+Useful params:
 
-### Rule of thumb
+- `resize_keyboard` — make buttons small. **Ignored on Telegram Desktop
+  5.3.2+** (it always uses 54px/button flat grid; 530px horizontal cap).
+- `one_time_keyboard: true` — hide keyboard after first tap. Good for
+  one-shot prompts.
+- `input_field_placeholder` — text in the input field above the
+  keyboard. Use it; users see this hint.
+- `selective: true` — show this keyboard only to specific users in a
+  group (rare).
 
-| Keyboard | Use for |
-|---|---|
-| Inline | Menus on messages, confirmations, pagination, "Edit this message" flows |
-| Reply | Persistent quick-access buttons, "Send a message" flows |
+### ForceReply
 
-**Never mix them.** `inline_keyboard` array is NOT `keyboard` array.
+Asks the user to reply in the chat (with an inline "replying to" UI).
+Use for **mandatory typed input** the bot can't capture with buttons.
+
+```json
+{
+  "force_reply": true,
+  "input_field_placeholder": "Send your booking address…",
+  "selective": false
+}
+```
+
+User sees a "Replying to your bot…" label above the input field. Bot
+must explicitly handle the next text message (filter by session step —
+see [telegram-bot-ux](../telegram-bot-ux/SKILL.md) §6 Linear wizard).
 
 ### Buttons vs commands — the heuristic
 
@@ -79,16 +119,21 @@ Tap "📅 Book" → bot receives a message with `text: "📅 Book"`.
 | Open a menu, confirm an action, paginate | Inline button |
 | Send free-form text (a contract address, a note, a search query) | `/command` + text input |
 | Type a structured argument the bot parses (date, time, amount) | `/command` + text input |
+| Mandatory text reply (replying to the bot's question) | ForceReply |
 | Persistent shortcut the user wants to tap repeatedly | Reply keyboard (use sparingly) |
 
 The old "default to inline buttons" rule is wrong. Buttons are right
 for **choices**; commands are right for **free input**. A bot that
-turns every input into a button is hostile to power users. A bot
-that uses commands for menus is hostile to mobile users.
+turns every input into a button is hostile to power users. A bot that
+uses commands for menus is hostile to mobile users.
 
 > **When in doubt, ask:** "Does the user know what to type?" If yes,
 > use a command. If no (or if there are too many valid options to
 > remember), use a button.
+
+For **what to write on the button** (verb-first, sentence case, emoji
+budget), see [telegram-bot-ux](../telegram-bot-ux/SKILL.md) §1
+Microcopy.
 
 ### Edit vs send
 
@@ -117,7 +162,7 @@ await ctx.reply("Choose:", {
       [{ text: "Option A", callback_data: "pick:a" }],
       [{ text: "Option B", callback_data: "pick:b" }],
     ]
-  }
+  },
 });
 ```
 
@@ -131,6 +176,101 @@ await ctx.reply("Main menu:", {
       [{ text: "📅 Book" }, { text: "📋 My bookings" }],
     ],
     resize_keyboard: true,
+    input_field_placeholder: "Tap a button…",
+  },
+});
+```
+
+### ForceReply for mandatory input
+
+```ts
+// Bot asks "send your address" — user sees "Replying to your bot"
+await ctx.reply("What's your address?", {
+  reply_markup: {
+    force_reply: true,
+    input_field_placeholder: "Type your address and send…",
+    selective: false,
+  },
+});
+```
+
+### Custom keyboard buttons for typed input (Bot API 9.4+ / 9.6+)
+
+Instead of free text, ask the user to share a contact, location, user,
+or chat via a single tap:
+
+```ts
+// Request contact
+await ctx.reply("Share your phone to register:", {
+  reply_markup: {
+    keyboard: [
+      [{ text: "📱 Share phone", request_contact: true }],
+      [{ text: "Skip", callback_data: "skip:phone" }],
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  },
+});
+
+// Request location
+await ctx.reply("Tap to share location:", {
+  reply_markup: {
+    keyboard: [
+      [{ text: "📍 Share location", request_location: true }],
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  },
+});
+
+// Request a specific user (e.g. for "refer a friend")
+await ctx.reply("Pick a friend to invite:", {
+  reply_markup: {
+    keyboard: [
+      [{ text: "👤 Pick user", request_user: {
+        request_id: 1,
+        user_is_bot: false,  // humans only
+      }}],
+    ],
+    resize_keyboard: true,
+  },
+});
+
+// Request a specific chat (e.g. for "post to a group")
+await ctx.reply("Pick a group to post in:", {
+  reply_markup: {
+    keyboard: [
+      [{ text: "💬 Pick group", request_chat: {
+        request_id: 2,
+        chat_is_channel: false,
+        chat_is_forum: false,
+      }}],
+    ],
+    resize_keyboard: true,
+  },
+});
+
+// Request a managed bot (Bot API 9.6+)
+await ctx.reply("Pick a bot to delegate to:", {
+  reply_markup: {
+    keyboard: [
+      [{ text: "🤖 Pick bot", request_managed_bot: { request_id: 3 } }],
+    ],
+    resize_keyboard: true,
+  },
+});
+```
+
+When the user taps one of these buttons, the resulting `Message` has
+the shared data pre-filled (`contact`, `location`, `user_shared`,
+`chat_shared`, `managed_bot_shared`). Handle it explicitly:
+
+```ts
+bot.on("message:contact", async (ctx) => {
+  if (ctx.session.step === "awaiting_phone") {
+    ctx.session.phone = ctx.message.contact.phone_number;
+    ctx.session.step = "phone_done";
+    await ctx.reply("Got it, thanks!");
   }
 });
 ```
@@ -190,6 +330,16 @@ await ctx.reply("New message");
 await ctx.answerCallbackQuery();
 ```
 
+> Telegram endorses the edit-in-place pattern explicitly:
+> *"To provide a better UX, consider editing your keyboard when the
+> user toggles a setting button or navigates to a new page – this is
+> both faster and smoother than sending a whole new message and
+> deleting the previous one."* — core.telegram.org/bots/features
+
+For **flow patterns that use edit-in-place** (linear wizard, branching
+menu, undo, checklist), see
+[telegram-bot-ux](../telegram-bot-ux/SKILL.md) §6.
+
 ### Callback data pattern
 
 Namespaced prefix keeps routing simple:
@@ -202,6 +352,10 @@ page:<n>                 — page jump
 pg:prev:<n> / pg:next:<n> — paginate helper
 ```
 
+Mind the 64-byte limit (`telegram-bot-basics` §4). For non-ASCII
+projects, prefer short prefixes and put the long ID in your own
+server-side map keyed by a UUID sent in `callback_data`.
+
 ---
 
 ## 3. The toolkit (`src/toolkit/`) — UI Builders
@@ -213,7 +367,8 @@ shapes grammY expects.
 
 ```ts
 import {
-  inlineButton, urlButton, inlineKeyboard, menuKeyboard, confirmKeyboard, paginate,
+  inlineButton, urlButton, copyTextButton, webAppButton,
+  inlineKeyboard, menuKeyboard, confirmKeyboard, paginate,
 } from "../src/toolkit/ui/buttons.js";
 ```
 
@@ -232,6 +387,31 @@ urlButton("Docs", "https://agnt-gm.ai")
 // → { text: "Docs", url: "https://agnt-gm.ai" }
 // Type: { text: string; url: string }
 ```
+
+### copyTextButton(text, copyText) — one-tap copy
+
+```ts
+copyTextButton("📋 Copy order ID", "ORD-12345")
+// → { text: "📋 Copy order ID", copy_text: { text: "ORD-12345" } }
+// Type: { text: string; copy_text: { text: string } }
+```
+
+Use this for IDs, addresses, codes, links — anything users would
+otherwise long-press to copy. Saves 4 taps per interaction. See
+[telegram-bot-ux](../telegram-bot-ux/SKILL.md) §10 anti-pattern "no
+copy_text for IDs".
+
+### webAppButton(text, url) — open Mini App
+
+```ts
+webAppButton("🛒 Open shop", "https://shop.example.com/twa")
+// → { text: "🛒 Open shop", web_app: { url: "https://shop.example.com/twa" } }
+// Type: { text: string; web_app: { url: string } }
+```
+
+Bot API 9.4+. Use when the flow has grown past what inline keyboards can
+carry — see [telegram-bot-ux](../telegram-bot-ux/SKILL.md) §8 Mini App
+graduation for the 4 explicit thresholds.
 
 ### inlineKeyboard(rows)
 
@@ -334,81 +514,14 @@ bot.on("callback_query:data", async (ctx) => {
 
 ---
 
-## 4. Stateful flows with editMessage
-
-For multi-step dialogs (book a slot, fill a form, confirm a destructive
-action), the question is: do you **edit the existing message** or
-**send a new one**? Most agents get this wrong by defaulting to
-"send a new message per step", which spams the chat.
-
-### Good: edit the same message
-
-User sees ONE message that updates in place as they tap buttons.
-
-```ts
-bot.callbackQuery("slot:14:00", async (ctx) => {
-  await ctx.editMessageText("Pick a service:", {
-    reply_markup: serviceKeyboard(),
-  });
-});
-
-bot.callbackQuery("service:cut", async (ctx) => {
-  await ctx.editMessageText("Booked 14:00 cut. Confirm?", {
-    reply_markup: confirmKeyboard("book"),
-  });
-});
-
-bot.callbackQuery("book:yes", async (ctx) => {
-  await ctx.editMessageText("✅ Booked 14:00 cut");
-  // No ctx.reply() — the message IS the confirmation.
-  await ctx.answerCallbackQuery({ text: "Booked!" });
-});
-```
-
-Result: one message in the chat, evolving through the flow. No
-scroll-back to see history. Works perfectly on mobile.
-
-### Bad: send a new message per step
-
-```ts
-// ❌ Don't do this
-bot.callbackQuery("slot:14:00", async (ctx) => {
-  await ctx.reply("Pick a service:", { reply_markup: serviceKeyboard() });
-});
-
-bot.callbackQuery("service:cut", async (ctx) => {
-  await ctx.reply("Booked 14:00 cut. Confirm?", { reply_markup: confirmKeyboard("book") });
-});
-```
-
-Result: chat fills with 4-5 messages per flow. The user's first
-message ("Pick a slot:") sits at the top, ignored. The latest
-confirmation is at the bottom. On mobile, the chat is unusable.
-
-### When to send a new message
-
-- The first message in a flow (the user has no prior message to edit).
-- A result that lives outside the flow ("I've sent you a PDF" —
-  the PDF is a new message; the chat state is still the old flow).
-- A persistent menu the user invokes via `/command` (not a callback).
-
-The rule: **one message per dialog**, updated in place. New messages
-are for new dialogs or for results the user keeps.
-
-### When editMessageText fails
-
-If the message is older than 48 hours or hasn't been edited before,
-`editMessageText` can fail with `message is not modified` (no actual
-change) or `message to edit not found`. Wrap edits in a try/catch
-and fall back to a new `ctx.reply()` if needed — but log the fallback
-so you can fix the flow.
-
-## 5. Toolkit vs Pure grammY
+## 4. Toolkit vs Pure grammY
 
 | Task | Pure grammY | Toolkit |
 |---|---|---|
 | Inline button | `{ text: "Hi", callback_data: "x" }` | `inlineButton("Hi", "x")` |
 | URL button | `{ text: "Link", url: "..." }` | `urlButton("Link", "...")` |
+| Copy-text button | `{ text: "Copy", copy_text: { text: "..." } }` | `copyTextButton("Copy", "...")` |
+| Web App button | `{ text: "Open", web_app: { url: "..." } }` | `webAppButton("Open", "...")` |
 | Grid menu | Manual row chunking | `menuKeyboard(items, cols)` |
 | Confirm row | Manual 2-button row | `confirmKeyboard("prefix")` |
 | Paginate | Manual slice + prev/next logic | `paginate(items, opts)` |
@@ -423,31 +536,9 @@ Toolkit builders produce the **same JSON shapes** grammY expects. They're conven
 2. **`paginate()` without handler** — buttons generate `pg:prev:X` / `pg:next:X` data. Must route them in callback handler.
 3. **Not catching unknown callbacks** — always have fallback `answerCallbackQuery` for stray callback data.
 4. **Using `editMessageText` on a new message** — you need `message_id` from a previous reply. `ctx.reply()` for first message, `ctx.editMessageText()` for updates.
-5. **One message per dialog step** — see section 4. Default to editing in place; only send a new message for the first step or a result the user keeps.
-6. **Buttons for free input** — see the "Buttons vs commands" heuristic in section 1. Don't force users through buttons when they'd type faster.
-
-## Review checklist before claiming done
-
-Before you write `agnt task claim` for the next task, run through this
-checklist. If any item is "no", the bot isn't done — even if all
-tests pass.
-
-1. **One message per dialog.** Open the bot in Telegram, walk through
-   every flow. Does each dialog update the same message in place, or
-   does it spam the chat? (See section 4.)
-2. **Spinners stop.** Tap every button. Does the loading spinner go
-   away? (Missing `answerCallbackQuery` is the #1 callback bug — see
-   `telegram-bot-basics`.)
-3. **Buttons vs commands makes sense.** Does the user know what to
-   type at each step? If yes, you have a command; if no, you have a
-   button. (See the heuristic in section 1.)
-4. **Edit-failure fallback works.** Pick a flow, send it through twice
-   quickly. Does the second attempt fail loudly or silently spam new
-   messages? (See the fallback note in section 4.)
-5. **Regex routing doesn't swallow.** If you use prefix-based
-   callback routing, the catch-all branch is last, not first.
-   (See the warning in section 2.)
-
-If any check fails, fix it and re-run. The LLM reviewer will catch
-some of these, but the bot is "done" when it works in the user's
-hands, not when the reviewer approves the diff.
+5. **64-byte `callback_data` with non-ASCII** — Telegram rejects with `BUTTON_DATA_INVALID`. It's BYTES, not chars. See `telegram-bot-basics` §4.
+6. **ForceReply without a step filter** — every text message in the chat will trigger your "awaiting X" handler. Gate by `ctx.session.step`. See `telegram-bot-ux` §6.
+7. **Reply keyboard + `resize_keyboard: true` then relying on it on Desktop** — Telegram Desktop 5.3.2+ ignores `resize_keyboard`. Design for 4 columns max.
+8. **Missing `input_field_placeholder`** — users see an empty input field and don't know what to type. Always set it.
+9. **`one_time_keyboard: false` (default) on one-shot prompts** — keyboard stays around after the user taps. Set `one_time_keyboard: true` for "tap once, I'm done" flows.
+10. **Sharing a custom keyboard for `RequestContact` after the user already shared** — old keyboard still visible. Send a new message with `remove_keyboard: true` or update the keyboard.
