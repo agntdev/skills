@@ -10,16 +10,25 @@ install in the README. This file records what's in each tag.
 
 ## Unreleased
 
-Builder agents (e.g. the habitdash build, 2026-06-17) got stuck
-when a project's dev work was fully done and the only "claimable"
-rows were the per-epic `*RV` review tasks, with `agnt phase show`
-saying `[platform] Next: generate_general` / `advance_phase` /
-`run_review`. The skill didn't define what to do in that wait
-state, and the `Task kinds` table didn't list `review`, so the
-agent had no rule for "don't claim `*RV` as a builder, the
-platform is the bottleneck."
+No unreleased changes. Cut the next version by tagging HEAD after
+your PR merges. See "How to cut" below.
+- This is a v0.14.3-era follow-up. Habitdash itself is still
+  blocked at the platform level (waiting for `generate_general`)
+  — no skill change can unstick it; the platform must author
+  the General anchor doc to advance the phase. Once the next
+  builder agent loads this version, it should hit the new
+  rule and not get stuck in the same place.
 
-### Fixed
+## v0.15.0 (2026-06-18) — `agnt bot logs` + wait-state skill fixes
+
+This cut ships the new `agnt bot logs <slug>` command (CLI) and
+the skill rules that teach agents the "nothing claimable, platform
+waiting" + "deploy failed, read the build log" paths. The skill
+side is the v0.14.3-era follow-up; the CLI side is the new
+command that turns agnt-api PR #170's `GET /projects/{id}/logs`
+endpoint into a one-liner.
+
+### What changed (skills)
 
 - **`agnt-cli-builder/SKILL.md` — wait-state rule for builders.**
   Added the `review` row to the `Task kinds` table (per-epic
@@ -31,21 +40,66 @@ platform is the bottleneck."
   "don't claim `*RV` as a builder" rule, and the fallback
   (pick another project from `agnt ready`, or report to the
   user when the platform is the bottleneck).
-- **`agnt-cli-builder/SKILL.md` — On Activation: connected-project
-  early-exit (DX-review follow-up).** Added step 1.5 to the
-  `On Activation` flow: if step 0 connected a project and the
-  project's DAG has zero `scaffold`/`feature` rows with
-  `status != done`, run `npx skills update -y` first (often the
-  unlock), then fall back to global `agnt ready`, and if that's
-  also empty, report to the user. Stops the "should I claim a
-  `*RV`?" debate in the first turn. Source: habitdash DX review
-  (`2026-06-17-habitdash-dx-review.md`), friction item #1.
-- This is a v0.14.3-era follow-up. Habitdash itself is still
-  blocked at the platform level (waiting for `generate_general`)
-  — no skill change can unstick it; the platform must author
-  the General anchor doc to advance the phase. Once the next
-  builder agent loads this version, it should hit the new
-  rule and not get stuck in the same place.
+- **`agnt-cli-builder/SKILL.md` — On Activation step 1.5.**
+  If step 0 connected a project and the project's DAG has zero
+  `scaffold`/`feature` rows with `status != done`, run
+  `npx skills update -y` first (often the unlock), then fall
+  back to global `agnt ready`, then report to the user.
+  Catches the "should I claim a `*RV`?" debate in turn 1.
+- **`agnt-cli-builder/SKILL.md` — Step 3.6: Bot deploy failed —
+  read the build log.** New section teaching agents to use
+  `agnt bot logs <slug>` when the platform auto-opens a fix
+  task for a bot-deploy failure. Common Mistake #11 added
+  to the deploy skill: don't work blind off `rc=1`.
+- **`telegram-bot-deploy/SKILL.md` — build-log reading.** §6
+  "When Deploys Happen" now describes `agnt bot logs` (and its
+  `--tail`, `--output`, `--stdout` flags) as the canonical way
+  to read the persisted build log. Common Mistake #11 added.
+  Quick Reference updated with the new command.
+
+### What changed (CLI)
+
+- **`@agntdev/cli@0.15.0`** — `agnt bot logs <slug>` (new
+  command). Downloads the bot's persisted build log
+  (redacted, capped) to `./<slug>-bot-build.log` by default.
+  Flags: `--output <path>`, `--tail <N>`, `--stdout`. Exit 2
+  with "No logs available" when the server's `BOT_LOG_DIR`
+  is unset or no build has run yet.
+
+### Cross-references
+
+- agnt-api PR #170 — bot build logs (owner download) + parallel
+  bot builds (Topics 1 & 2)
+- agnt-api PR #172 — make the cloud-agent row the single source
+  of truth for cloud builds
+- agnt-api PR #173 — remove toolkit/ resurrected by the #170 merge
+- agnt-api `docs/managed-bot-deploy-and-logs.md` — full lifecycle
+  + config + storage details
+- DX review: `2026-06-17-habitdash-dx-review.md` (friction item
+  #1: skill gap on `*RV` claim; this release closes that)
+- Issue drafts (not yet filed): `issue-drafts/agnt-cli-empty-diff.md`,
+  `issue-drafts/agnt-api-rebase-redispatch.md`
+
+### Files
+
+- `skills/agnt-cli-builder/SKILL.md` — wait-state section, On
+  Activation step 1.5, Step 3.6 (build log), Quick Reference
+- `skills/telegram-bot-deploy/SKILL.md` — §6, Common Mistake #11,
+  Quick Reference
+- `CHANGELOG.md` — this entry
+- CLI side: `agnt-cli/src/commands/bot/logs.ts` (new),
+  `agnt-cli/test/commands/bot/logs.test.ts` (new, 3 tests),
+  `agnt-cli/package.json` (0.14.1 → 0.15.0)
+
+### Install
+
+```bash
+# Pin to v0.15.0 (recommended for production)
+npx skills add agntdev/skills/tree/v0.15.0
+
+# Latest (default, tracks main)
+npx skills add agntdev/skills
+```
 
 ## v0.14.3 (2026-06-17) — revert toolkit to inlined pattern (PR #168)
 

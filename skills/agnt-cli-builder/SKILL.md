@@ -526,6 +526,33 @@ yourself a 3-second auto-close.
 But: an approve from `agnt test` + a clean diff stat + the exact branch
 + title format below is the safest bet you'll get.
 
+### Step 3.6: Bot deploy failed — read the build log
+
+When the platform auto-opens a `fix-*` task for a bot-deploy failure
+(common on the `general → design → ... → tests` path: the deploy
+worker builds the bot image, the build fails, the platform opens a
+fix task with the failure in the body), **don't work blind off
+`rc=1`**. The real `tsc` / `npm` error is in the persisted build
+log, one file per project on the server (`BOT_LOG_DIR`).
+
+```bash
+# Download the build log
+agnt bot logs <slug>                  # -> ./<slug>-bot-build.log
+agnt bot logs <slug> --tail 80        # last 80 lines (usually enough)
+agnt bot logs <slug> --output /tmp/x  # explicit path
+```
+
+- Exit `0` + a `Wrote N lines to ...` line on success.
+- Exit `2` + `No logs available` if `BOT_LOG_DIR` is unset on the server
+  or no build has run yet. That's an admin issue; do not retry.
+- Exit `1` on 401/403 (you aren't the owner) or 5xx.
+
+The build log is **redacted** (secrets stripped) and **capped**
+(per-entry tail + whole-file trim to last half on a clean block
+boundary). It's the same log the platform quotes in the fix task
+body when it can. Scope: build logs in v1; runtime stdout /
+crashes are a later phase.
+
 ### Step 4: Submit PR
 
 ```bash
@@ -818,6 +845,7 @@ agnt test <slug> <task>             # preview-review before pushing
 
 # Track
 agnt bot show <slug>                # post-publish bot identity
+agnt bot logs <slug>                # download build log (when deploy fails)
 ```
 
 ## Reference

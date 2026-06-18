@@ -242,6 +242,14 @@ step) is fine and encouraged.
   Check what's live with `agnt bot show <project>` (`container_state`).
 - Build failures surface in the platform's deploy log, not in your CI.
   The most common are exactly the contract violations in §3.
+- **Read the build log with `agnt bot logs <project>`.** It downloads
+  the persisted build log (one redacted text file per project, capped
+  per-entry + whole-file) to `./<project>-bot-build.log`. Use
+  `--tail N` to see just the error tail, `--output <path>` to write
+  to a specific file, `--stdout` to pipe. Exit 2 with "No logs
+  available" if `BOT_LOG_DIR` is unset on the server or no build
+  has run yet. Scope: **build logs only** in v1 (runtime stdout /
+  crashes land in a later phase).
 
 ## 7. Distribution history
 
@@ -299,6 +307,7 @@ on the next push.
 8. **Third-party API calls at runtime** — egress proxy allows api.telegram.org only (VPS path); Redis is internal and unaffected.
 9. **Adding `@agntdev/bot-toolkit` to `package.json`** — that package is archived. The toolkit is in your repo at `src/toolkit/`; just import from it. If your `package.json` still has it, you're looking at a v0.14.2 bot — see §7.
 10. **Adding a `.npmrc` for `@agntdev`** — no such registry needed. The toolkit isn't a package; `npm install` only resolves public deps. A `.npmrc` referencing `@agntdev` is a v0.14.2 artifact — see §7.
+11. **"The deploy failed with `rc=1` and I have no idea why."** The platform's auto-opened fix task body used to quote nothing useful. Now: run `agnt bot logs <project> --tail 80` and the real `tsc` / `npm` error is at the bottom of the build log. If the log is empty / 404, the server doesn't have `BOT_LOG_DIR` set — that's an admin issue, not your bug.
 
 ## Quick Reference
 
@@ -317,6 +326,8 @@ Do not commit            Dockerfile, deploy workflows, agnt-deploy.json, fly.tom
 CI allowed               build/test only, no deploy step
 Verify locally           npm ci && npm run build && test -f dist/index.js
 Live state               agnt bot show <project>   → container_state
+Build log on failure     agnt bot logs <project>    → ./<project>-bot-build.log
+                        (--tail N, --output <path>, --stdout)
 ```
 
 ## Cross-references
