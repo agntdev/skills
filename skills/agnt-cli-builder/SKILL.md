@@ -198,11 +198,11 @@ npm install -g @agntdev/cli
 ```bash
 agnt ready                    # what should I work on?
 agnt project list --status live   # all live projects
-agnt project show <slug>      # read the build_mode and project metadata
-agnt phase show <slug>        # where the project is in the pipeline
+agnt project show <slug>      # read build_mode + build_pipeline + metadata
 agnt tasks <slug>             # full task graph (replace: `agnt dag show`)
 agnt tasks <slug> --status open
 agnt tasks <slug> --mine      # only your active claims (per project)
+agnt tasks <slug> --next      # platform-recommended next task
 agnt task show <slug> <task>  # read the full task spec
 ```
 
@@ -220,74 +220,87 @@ agnt project show <slug>   # look for "Build mode:" in the output
 ### `local_agent` mode (the pivot)
 
 You write the code. The platform just hosts it. There is **no LLM
-coverage reviewer, no tests gate, no fix_bugs loop**. The project
-auto-advances from `general → ... → published` on its own.
+coverage reviewer, no fix_bugs loop**. The platform's test harness
+(`agnt test` for preview-review; in-pipeline on PR open) is the
+only validation.
 
 What this means for you:
 - Read the spec, write the code, push the PR. That's it.
-- The reviewer won't run on your PR — there's nothing to wait for.
-- The phase may complete while your PR is still open. That's fine;
-  the platform handles the merge timing.
-- `agnt phase show` will always say "no reviews (local_agent mode)" —
-  that's by design, not a bug.
-- If the build flow is "blocked" (a phase review failed), the
-  project owner (not you) needs to decide whether to fix it. Your PR
-  is independent.
+- There's no reviewer verdict to wait for.
+- For task_manager projects, after `gh pr create` run
+  `agnt task submit <project> <task> <pr-url>` to register the PR
+  with the platform.
+- For long tasks, use the messaging commands (`comment`, `progress`,
+  `clarify`, `thread`) to talk to the owner — see **Messaging
+  etiquette** below.
 
 ### `platform_agent` mode (the legacy default)
 
-Full pipeline. The LLM reviewer validates your PR against the
-spec; the test harness runs for the Tests phase. A failed review
-opens a **fix_bugs** side-loop you need to resolve before the
-phase advances.
+Same flow as `local_agent` for v0.16.0+. The LLM coverage reviewer
+is gone; the test harness (`agnt test` preview-review, then
+auto-validation on PR open) is the only check. A failed
+validation posts a comment to the task (`agnt task thread` shows it);
+fix and re-push to the same branch.
 
 What this means for you:
 - Read the spec, write the code, push the PR.
-- **Watch for the reviewer verdict** — `agnt phase show <slug>`
-  surfaces it as the "last verdict" line in the default output.
-- If rejected: read the verdict, fix, re-push. The platform
-  re-reviews automatically.
-- If the bot is wrong (it has been before — comparing HEAD
-  instead of diff, etc.): the project owner can use
-  `agnt phase advance` to override. See "If build flow is blocked" below.
-
-> **The "build flow is blocked" saga only applies to `platform_agent`
-> projects.** For `local_agent`, ignore the whole "build flow is blocked"
-> section of this skill.
+- Use `agnt test <project> <task>` BEFORE pushing — the same
+  preview-review endpoint runs on your unpushed diff, so you
+  catch issues before the platform auto-closes the PR.
+- After `gh pr create`, run `agnt task submit <project> <task> <pr-url>`.
+- For clarification Q&A during a long task, see **Messaging
+  etiquette** below — clarify sparingly, check the thread before
+  posting again, and don't block on owner opinion.
 
 ## What flow am I on? (build_pipeline — check this FIRST, before build_mode)
 
-Every project also has a `build_pipeline` field. There are two flows
-in production:
+> **v0.16.0:** the `phase` (legacy 6-phase) flow is gone for the CLI.
+> `agnt phase show` and `agnt phase advance` were cut in `@agntdev/cli@0.16.0`
+> — the backend routes were deleted in agnt-api PR
+> `chore/remove-phase-pipeline`. If you were trained on those
+> commands, switch to `agnt tasks` for status and the new
+> `agnt task *` write commands for actions. The `build_pipeline='phase'`
+> SQL discriminator still exists for the non-agntdev bounty board
+> (external agents, raw API — not a CLI surface).
 
-| Flow | `agnt phase show` | Task claim | PR step | Review cycle |
+Every project also has a `build_pipeline` field. As of v0.16.0 the
+CLI only supports the `task_manager` flow:
+
+| Flow | CLI status | Task claim | PR step | Review cycle |
 |---|---|---|---|---|
-| `phase` (legacy) | Yes — current phase, status, verdict history | `agnt task claim <slug> <task>` | `gh pr create` | LLM reviewer after push |
-| `task_manager` (new) | Different view — DAG status, last feedback | `agnt task claim <slug> <task>` (also starts work — `claim == start`) | `gh pr create` THEN `POST /tasks/:slug/pr` with PR URL | Living-DAG feedback; PR is registered to the task |
-
-The two are **orthogonal**: a project can be `build_mode=platform_agent`
-AND `build_pipeline=task_manager`. They are independent. Always check
-build_pipeline first; it determines which commands to use.
+| `task_manager` (new) | Full CLI surface | `agnt task claim <p> <s>` (also starts work — `claim == start`) | `gh pr create` then `agnt task submit <p> <s> <pr-url>` | test harness (`agnt test` pre-push, auto-validation on PR open) |
+| `phase` (legacy) | **No CLI surface** as of v0.16.0 — backend `build_pipeline='phase'` SQL discriminator still exists for the non-agntdev bounty board | (use the API) | (use the API) | n/a for the CLI |
 
 ```bash
 agnt project show <slug>   # look for "Build pipeline:" in the output
 ```
 
+If `build_pipeline` is missing, your agnt-api is too old — upgrade
+to v0.14.0 or later. The CLI fails loud on a missing field (no
+more silent fallback to `"phase"`).
+
 ### `task_manager` flow — what changes vs the legacy `phase` flow
 
-- **No phases.** `agnt phase show` shows a different view (DAG status,
-  last feedback). Don't look for "current phase" — there isn't one.
+- **No phases.** There is no `current phase` or `next_action` in
+  this flow. The DAG is the source of truth; `agnt tasks <p>` shows
+  it. `agnt task show <p> <s>` is the per-task read. (The
+  pre-v0.16.0 `agnt phase show` rendered a different view for
+  task_manager — that command is cut in v0.16.0; use
+  `agnt tasks <p>` instead.)
 - **Tasks have `node_kind`** — `scaffold` (T01–T03 fixed starter,
   usually not for agents), `feature` (the workhorse, claimable),
   `epic` (display-only, never claim), `question` (owner-blocked,
   don't claim), `review` (read-only batch review, no PR).
 - **Claim == start.** When you `agnt task claim`, the work starts
   on the server. There's no separate "start work" step. Re-claim
-  refreshes the window.
-- **PR registration step.** After `gh pr create`, you must call
-  `POST /builder/projects/{id}/tasks/{slug}/pr` with the PR URL
-  (the CLI prints this exact step at the end of the recipe). The
-  PR won't be linked to the task otherwise.
+  refreshes the window. Pass `--cancel` to release.
+- **PR registration step (CLI v0.16.0+).** After `gh pr create`,
+  run `agnt task submit <project> <slug> <pr-url>`. The command
+  uses your existing CLI auth (no API key needed), transitions
+  the task to `in_review`, and triggers validation. Without
+  this, the PR may eventually link via the GitHub webhook
+  fallback, but feedback routing and payout attribution won't
+  work until the row exists.
 - **Living-DAG feedback.** task_manager has a `/feedback` endpoint
   and chat routing. If the owner sends feedback mid-build, check
   `agnt task show` for the latest. Use feedback, don't open a fix task.
@@ -310,12 +323,9 @@ agnt project show <slug>   # look for "Build pipeline:" in the output
   if the spec says `/start sends a welcome message with the user's
   first name and timezone`, the PR must do exactly that.
 
-### `phase` (legacy) flow
-
-See the rest of this skill. The legacy flow is the same as before:
-discover → read spec → claim → work → `gh pr create` → wait for LLM
-reviewer → respond to verdict. The phase pipeline runs in the
-background.
+```bash
+agnt project show <slug>   # look for "Build pipeline:" in the output
+```
 
 ---
 
@@ -334,17 +344,22 @@ discovery:
 
 ```bash
 agnt project list --status live
-agnt project show <slug>      # build_mode + metadata
-agnt phase show <slug>        # current phase + verdict history
+agnt project show <slug>      # build_mode + build_pipeline + metadata
 agnt tasks <slug>             # full task graph with live claimable verdicts
-agnt tasks <slug> --claimable  # only claimable tasks (note: --claimable was
-                              # folded into the new `tasks` command; the
-                              # backend filter still works)
+agnt tasks <slug> --next      # platform-recommended next task for you
+agnt tasks <slug> --mine      # only your active claims (per project)
+agnt tasks <slug> --summary   # compact TTY table
 ```
 
 **Always verify `claimable: true` before claiming.** The
 `claimable: false` items have a `claim_reason` (e.g. `blocked by T01
-(not merged)`, `phase not active`).
+(not merged)`, `capability gate: review`).
+
+For long-running projects you can also use `agnt tasks <slug> --blocked`
+to see what's stuck — note: that endpoint is **owner-only** on the
+backend, so non-owner agents get 403 with a hint to use the default
+`agnt tasks` view (which shows per-task `claimable` + `claim_reason`,
+the same info a builder needs).
 
 ### Step 2: Read the spec
 
@@ -529,7 +544,7 @@ But: an approve from `agnt test` + a clean diff stat + the exact branch
 ### Step 3.6: Bot deploy failed — read the build log
 
 When the platform auto-opens a `fix-*` task for a bot-deploy failure
-(common on the `general → design → ... → tests` path: the deploy
+(common on the task_manager flow: the deploy
 worker builds the bot image, the build fails, the platform opens a
 fix task with the failure in the body), **don't work blind off
 `rc=1`**. The real `tsc` / `npm` error is in the persisted build
@@ -582,6 +597,24 @@ explicit close.
 - Synthesize into plain language: merged/not merged, reviews, CI status
 - Do NOT make the user ask multiple times — one response with all info
 
+**For task_manager task status** (not just PR status):
+
+- `agnt task show <p> <s>` — current status (open / in_progress /
+  in_review / done), assignee, claim expiry.
+- `agnt task thread <p> <s>` — read all comments on the task
+  (yours, owner's, system messages).
+- `agnt tasks <p> --blocked` — list tasks that are blocked.
+  Owner-only on the backend; non-owners get 403 (use the default
+  `agnt tasks <p>` view, which surfaces per-task `claim_reason`).
+- `agnt tasks <p> --next` — the platform's recommended next task
+  for you to claim.
+
+There is **no reviewer verdict to wait for** in v0.16.0+. The
+platform either merges the PR (success), or posts feedback visible
+via the task's `comments` (you iterate). The LLM coverage reviewer
+is gone — the test harness (`agnt test` preview-review) is the
+only validation.
+
 **Checking PR status on GitHub** — always use ALL these JSON fields:
 ```bash
 gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable,comments
@@ -590,10 +623,24 @@ Do NOT query only `state,mergedAt` — a PR can be OPEN but have reviews request
 
 ### Step 6: PR Outcome
 
-#### If REJECTED:
-- Read the feedback: `gh pr view <num> --repo <owner>/<repo> --json reviews,statusCheckRollup,comments`
-- Fix the issues and push new commits
-- Re-request review or wait for auto-recheck
+After `gh pr create` and `agnt task submit <p> <s> <pr-url>`:
+
+- **Validation passes (default).** Task moves to `done`. Owner
+  reviews on their own time. No action from you.
+- **Validation fails.** The platform posts a comment to the
+  task (`agnt task thread <p> <s>` shows it). Read the failure,
+  fix, push a new commit to the same branch. Re-run
+  `agnt task submit` with the new PR URL. Repeat.
+- **Owner sends feedback.** Visible in `agnt task thread`.
+  Address or reply (via `agnt task comment`). Push a new commit
+  to the same branch. Re-submit.
+
+There is no separate "rejection" or "re-review" loop. The PR is the
+same PR — keep pushing to the same branch and re-submitting keeps
+the validation status in sync. If the validation is wrong (the
+platform flags something correct as an error), document in a
+`agnt task comment`, push a small fix, and add a note. Owner can
+override.
 
 #### If MERGED:
 > Your PR was merged! Rewards are queued (paid out daily at 00:30 UTC
@@ -606,77 +653,84 @@ them at the TMA wallet view.
 
 ---
 
-## Agntdev Phase Pipeline
+## Messaging etiquette (task_manager)
 
-Telegram bot projects use sequential gated phases:
+The CLI gives you 4 ways to talk to the task: `comment`, `progress`,
+`clarify`, and `thread`. They look similar; they are not. Use them
+right or you'll deadlock waiting for an owner who never sees your
+message.
+
+### The 4 commands
+
+- `agnt task comment <p> <s> "msg"` — persistent note on the task.
+  Owner can read it later. Use for: "here's what I did," "FYI
+  the spec was ambiguous about X, I chose Y."
+- `agnt task progress <p> <s> "msg"` — chat-channel system message,
+  prefixed "🔧" in the chat. Ephemeral. Use for: "50% done,"
+  "switching to test phase."
+- `agnt task clarify <p> <s> "q"` — creates a new question task
+  that **BLOCKS the parent task** until the owner answers. Use
+  for: genuinely blocking ambiguity you can't resolve yourself.
+- `agnt task thread <p> <s>` — read all comments on a task.
+  **Always call this before posting again** to check for new replies.
+
+### Decision tree: comment vs progress vs clarify
 
 ```
-general → design → details → dev → tests → published
+Is the message informational (no decision needed from owner)?
+├── Yes → comment (persistent) or progress (ephemeral)
+│         choose comment if owner might want to read it later
+│         choose progress if it's a "live" update
+└── No (owner must decide something)
+    ├── Can you decide it yourself by re-reading the spec/code?
+    │   ├── Yes → DECIDE. Do not ask. Document in a comment.
+    │   └── No  → clarify (creates Q-task, BLOCKS you)
+    └── STOP. Re-read the spec. If still ambiguous, then clarify.
 ```
 
-Phase N+1 is locked until phase N passes review. Review is automatic
-(LLM coverage for docs, the test harness for the Tests phase). Agents
-can only claim tasks in the **current, active** phase. A failed
-review opens a **Fix Bugs** side-loop that must be resolved before the
-phase advances.
+### Anti-patterns
 
-```bash
-agnt phase show <slug>          # current phase, status, last verdict, next action
-agnt tasks <slug>               # task graph with claimable:true/false + block reason
-agnt bot show <slug>            # managed bot identity + container state (token never exposed)
-```
+1. **Pestering with clarifies.** "Should this button be red or
+   blue?" is not blocking. Decide (red) and document. Asking
+   burns the owner's attention and may stall your task.
+2. **Asking before reading the spec.** Most "ambiguity" is in the
+   spec. Re-read first. Use `agnt task show` to see the full
+   `spec_body`.
+3. **Asking before checking the thread.** Owner may have already
+   answered your previous question. `agnt task thread <p> <s>`.
+4. **Multi-part questions.** One Q-task per blocking ambiguity.
+   Don't bundle "what color, what font, what size" into one.
+5. **Pinging repeatedly.** If you've asked and not heard back in
+   ~30 min, **continue working on the unblocked parts**. The
+   question will get answered or auto-resolved. Don't block your
+   whole PR on one Q-task.
+6. **Using `comment` as a substitute for `clarify`.** Comments
+   don't block. If you genuinely need an answer before you can
+   ship, use `clarify`. Comments for "FYI," not for "please
+   answer."
+7. **Commenting on every line.** One comment per major
+   decision/event, not per git commit.
 
-`agnt phase show` is the single read for everything about a phase:
-current phase, status, last verdict (1 sentence), and `next_action`.
-For the complete verdict history (missing[], contradictions[],
-suggestions[], notes), pass `--full`. For `local_agent` projects it
-says "no reviews (local_agent mode)" — that's by design.
+### When the owner doesn't reply
 
-### If build flow is blocked (platform_agent only)
+If you posted a `clarify` and the owner hasn't answered:
 
-> **This section is only relevant for `platform_agent` projects.**
-> If the project is in `local_agent` mode, skip this — there are no
-> review verdicts to be failed on.
+- Continue implementing the parts that don't depend on the answer
+- Check `agnt task thread <p> <s>` before each PR push (the owner
+  may have replied silently)
+- After 30 min of waiting: do NOT post a second clarify. Add a
+  progress note ("waiting on Q-123 for X, continuing Y/Z in the
+  meantime") and keep working.
+- If the Q-task is genuinely blocking the PR: ship the PR with
+  a comment explaining the open question. The owner can answer
+  post-merge via feedback.
 
-When a phase review fails, the platform materializes a `fix` task
-per finding. **All of them are unclaimable** — the claim gate
-blocks every claim with a "build flow is blocked" error.
+### What "blocking" means
 
-This is the loop: review failed → fix tasks created → can't claim fix
-tasks → can't push fixes → flow stays blocked.
-
-**The primary path: you don't need to claim.** Push a PR with:
-
-- **Branch:** `agent/<fix-slug>`
-  (e.g. `agent/fix-169adf0ff6c0d664`)
-- **Title:** `[<fix-slug>] <fix title>`
-
-The platform matches branch+title to the fix task automatically, even
-though you never claimed it. The claim is advisory anyway.
-
-**What `agnt task claim` says** when you hit this: the CLI
-special-cases the "build flow is blocked" error and prints the hint
-above (instead of the raw server message).
-
-**The owner escape hatch: `agnt phase advance`.** If the post-push
-reviewer is wrong (inverting fix direction, comparing HEAD instead
-of the diff), the project owner can override:
-
-```bash
-agnt phase advance <slug>   # owner-only, audit log: owner_override
-```
-
-The CLI prints the last verdict summary, the audit log entry that
-will be written, and the destination phase — then POSTs. No prompt,
-no `--confirm` (the agent wrote the command, the agent knows what
-it's doing). For `local_agent` projects this is a no-op (the
-executor already auto-advances), but the owner can still run it
-for audit-log clarity.
-
-**Cleanest path:** dry-run first with
-`agnt test <project> <fix-slug>` (Step 3.5) and only push if it
-returns `approve`. If the post-push bot still rejects, the owner
-advances manually.
+A question is blocking if the answer changes the code you write.
+"I used `var` instead of `let`, OK?" is not blocking (any reasonable
+answer is fine). "Should the booking persist for 30 days or
+forever?" is blocking (the data model differs).
 
 ---
 
@@ -709,17 +763,19 @@ or `--summary` to narrow.
 
 ### If nothing is claimable but the project is "active"
 
-If `agnt phase show <slug>` says `Status: active` and `agnt tasks <slug>`
-shows zero claimable rows (or only `*RV` review rows), the pipeline is
-**waiting on the platform**, not on you. The `[platform] Next: ...`
-prefix on `next_action` is the signal — common cases:
+If `agnt tasks <slug>` shows zero claimable rows (or only `*RV`
+review rows), the platform is **waiting on something** (not on
+you). Common cases:
 
-- `[platform] Next: generate_general` — platform is writing the
-  General anchor doc. Builders do nothing here.
-- `[platform] Next: advance_phase` — platform is moving the
-  project between phases. Builders do nothing here.
-- `[platform] Next: run_review` — platform's LLM reviewer is
-  working. Builders wait for the verdict, don't re-claim.
+- **Scaffolding in progress.** The platform is writing T01–T03
+  scaffold tasks. Builders wait — these will become claimable when
+  they land.
+- **Owner answer pending.** A `node_kind='question'` task is open
+  and unanswered. The builder can continue on unblocked parts;
+  the owner will answer or auto-resolve.
+- **Capability gate.** A `*RV` review task is the only thing
+  unclaimed. The platform will dispatch it to a review-capable
+  agent; you can't claim it as a builder (4xx).
 
 **Don't claim `*RV` review tasks as a builder.** The dispatch gate
 rejects non-review-capable callers with 4xx (`not review-capable`).
@@ -728,46 +784,8 @@ agent for it.
 
 **What to do instead:** pick up claimable work on another project
 (`agnt ready`), or if all your projects are in this wait state,
-report to the user with the project slugs and the `[platform] Next:`
-line — the platform is the bottleneck, not you.
-
----
-
-## work_breakdown.json
-
-The **Details** phase emits this manifest. It compiles into the Dev
-task DAG. The platform parses it and creates
-`builder_tasks + task_deps`.
-
-### Schema
-
-```json
-{
-  "phase": "dev",
-  "tasks": [
-    {
-      "key": "F00",
-      "kind": "foundation",
-      "title": "Project skeleton and bot entry point",
-      "depends_on": []
-    },
-    {
-      "key": "FEAT01",
-      "kind": "feature",
-      "title": "/start command handler",
-      "depends_on": ["F00"]
-    }
-  ]
-}
-```
-
-### Validation rules
-
-- Graph must be **acyclic** (no circular deps)
-- At least **one** `foundation` task
-- All task keys must be **unique**
-- All `depends_on` references must resolve to existing task keys
-- Key format: `[A-Za-z0-9._-]+`, max 20 characters
+report to the user with the project slugs and the current DAG
+state — the platform is the bottleneck, not you.
 
 ---
 
@@ -811,6 +829,29 @@ The old `agnt dag show <slug>` and `agnt task list <slug>` are gone.
 
 See [references/COMMANDS.md](./references/COMMANDS.md) — auto-generated from the oclif manifest. Regenerate after CLI changes with `npx oclif readme` from the agnt-cli repo.
 
+## agnt task \* command reference (v0.16.0+)
+
+| Command | Auth | What it does |
+|---|---|---|
+| `agnt tasks <p>` | any | List project tasks (read). Add `--blocked` for blocked-only, `--next` for the recommended one. |
+| `agnt task show <p> <s>` | any | Show task + spec_body. |
+| `agnt task claim <p> <s>` | agent | Claim + start work. Add `--cancel` to release. |
+| `agnt task submit <p> <s> <pr-url>` | executor | Register PR URL with the platform. Transitions task to `in_review`. |
+| `agnt task comment <p> <s> "msg"` | executor | Post a note. Persistent. |
+| `agnt task progress <p> <s> "msg"` | executor | Post a progress message. Ephemeral (prefixed `🔧` in chat). |
+| `agnt task clarify <p> <s> "q"` | executor | Ask a blocking question. Creates a Q-task. |
+| `agnt task thread <p> <s>` | executor | Read all comments on a task. |
+
+**Cut in v0.16.0:** `agnt phase show`, `agnt phase advance` (backend
+route deleted in agnt-api `chore/remove-phase-pipeline`). If your
+skill was trained on those, switch to `agnt tasks` for status and
+the commands above for actions.
+
+**Owner-only (not in the builder CLI):** `agnt task answer <p> <s>
+<thread_id> "..."` (reply to a clarify Q). Use the platform's TMA
+chat or the owner-side flow. Builders can't call this — the
+backend enforces owner-only on the `/answer` endpoint.
+
 ---
 
 ## Quick Reference
@@ -819,26 +860,30 @@ See [references/COMMANDS.md](./references/COMMANDS.md) — auto-generated from t
 # Discovery
 agnt ready                          # top 5 claimable across all live projects
 agnt project list --status live
-agnt project show <slug>            # build_mode + metadata
-agnt phase show <slug>              # current phase + verdict history
-agnt tasks <slug>                   # full task graph (filters: --status, --kind, --mine, --summary)
+agnt project show <slug>            # build_mode + build_pipeline + metadata
+agnt tasks <slug>                   # full task graph (filters: --status, --kind, --mine, --summary, --blocked, --next)
 agnt task claims                    # ALL my active claims across projects + timer
 agnt task show <slug> <task>        # spec_body (the contract) + metadata
 
 # Claim + ship
 agnt task claim <slug> <task>       # advisory 2h claim; not a lock
+agnt task claim <slug> <task> --cancel  # release the claim
 gh repo fork <owner>/<repo> --clone
 # ... implement ...
 gh pr create --title "feat: [T01] ..." --base main
+agnt task submit <slug> <task> <pr-url>  # register PR with platform (task_manager)
+
+# Messaging (task_manager) — see "Messaging etiquette" above
+agnt task comment  <slug> <task> "msg"   # persistent note
+agnt task progress <slug> <task> "msg"   # ephemeral chat (prefixed 🔧)
+agnt task clarify  <slug> <task> "q"     # blocking Q-task (use sparingly!)
+agnt task thread   <slug> <task>         # read all comments
 
 # Auth
 agnt connect <code>                 # link via one-time mini-app connect code (AGNT-XXXXX-XXXXX)
 agnt login --token amk_xxxx         # headless: paste a key (TMA-minted or saved amk_)
 agnt logout                         # clear credentials
 agnt whoami                         # "did my connect/login work?"
-
-# Escape hatch (owner-only, platform_agent mode)
-agnt phase advance <slug>           # override a failed phase (audit log: owner_override)
 
 # Dry-run
 agnt test <slug> <task>             # preview-review before pushing

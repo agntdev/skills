@@ -8,6 +8,68 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.16.1 (2026-06-19) — phase-cut + messaging etiquette + new CLI surface
+
+**Goal.** Drop phase references in the `agnt-cli-builder` skill (the
+backend phase routes are gone in agnt-api `chore/remove-phase-pipeline`),
+add a **Messaging etiquette** section to prevent agent deadlock on the
+new `clarify` / `comment` / `progress` commands, and teach the new
+`agnt task submit` / `thread` workflow that replaces the curl.
+
+**Why.** `@agntdev/cli@0.16.0` ships 5 new task_manager write commands
+(`submit`, `comment`, `progress`, `clarify`, `thread`), 3 new flags
+(`claim --cancel`, `tasks --blocked`, `tasks --next`), and removes
+`agnt phase show` / `agnt phase advance` (backend route deleted). If
+skills still teach the old commands, builders on this bundle will try
+to run commands that don't exist on whatever CLI version they have
+pinned. And the new `clarify` command is a **blocking** Q-task —
+without explicit etiquette guidance, agents will spam the owner and
+deadlock waiting for replies that may never come.
+
+**`agnt-cli-builder` (big surgery):**
+
+- **Cut `## Agntdev Phase Pipeline` section** (~80 lines). All phase
+  diagrams, the verdict-history docs, and the "If build flow is
+  blocked" saga. Dead once `agnt phase show` is gone.
+- **Cut `### phase (legacy) flow` subsection.** The whole legacy
+  flow is gone from the CLI; the section is now misleading.
+- **Cut `## work_breakdown.json` section.** This was a Details-phase
+  artifact. The platform's per-feature decompose prompt (agnt-api
+  PR #179) now generates the task DAG directly.
+- **Updated task_manager flow section** — `agnt task submit
+  <project> <task> <pr-url>` replaces the `POST /tasks/:slug/pr`
+  curl.
+- **Updated `local_agent` and `platform_agent` mode sections** —
+  dropped the "watch the reviewer verdict" cycle. Both modes
+  flow the same way in v0.16.0+ (test harness is the only check;
+  no LLM coverage reviewer).
+- **Updated "What flow am I on?" table** — dropped the `phase` row,
+  added a clear v0.16.0 migration note pointing at `agnt tasks`.
+- **Updated Step 5 / Step 6** — status reads use `agnt task show` /
+  `agnt task thread` / `agnt tasks --blocked` / `agnt tasks --next`.
+  PR outcome is now: validation pass (default) → `done`, validation
+  fail → comment in thread → fix + re-push + re-submit. No more
+  separate "rejection" loop.
+- **Added "Messaging etiquette" section** — the deadlock-prevention
+  guide for the 4 messaging commands. Decision tree,
+  anti-patterns, "what to do when the owner doesn't reply," and a
+  definition of "blocking" vs not.
+- **Added "agnt task \* command reference" table** — quick lookup
+  for the 8 task_manager commands + the cut `phase *` commands.
+- **Updated Quick Reference** — removed `agnt phase show` /
+  `agnt phase advance`; added the 4 messaging commands and
+  `agnt task submit`.
+
+**Other skills:** light touch only. `telegram-test-specs` "verdict"
+references are about the GATE test harness verdict, not the deleted
+LLM coverage reviewer — left intact.
+
+**Coordinated with:** `@agntdev/cli@0.16.0` (commit 68ac725, local;
+not yet pushed). Skills bundle ships in v0.16.1 once the CLI is
+out the door.
+
+---
+
 ## v0.16.0 (2026-06-18) — UX split, Bot API 10.1 ground-truth
 
 **Goal.** Split the overloaded `telegram-bot-ui` into mechanics vs
