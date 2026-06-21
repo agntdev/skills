@@ -541,7 +541,33 @@ yourself a 3-second auto-close.
 But: an approve from `agnt test` + a clean diff stat + the exact branch
 + title format below is the safest bet you'll get.
 
-### Step 3.6: Bot deploy failed — read the build log
+### Step 3.5b: Bot file structure (per-feature handlers)
+
+Features go in `src/handlers/<slug>.ts` — one file per feature, each
+default-exporting a grammY `Composer`. `buildBot()` auto-loads every
+file in `src/handlers/` at startup. **NEVER edit `src/bot.ts`** to add
+commands — that creates merge conflicts when concurrent PRs touch the
+same shared file.
+
+**Fix-tasks are different.** If the task slug starts with `fix-`, you
+are repairing an existing feature — **edit the existing handler/spec in
+place**, don't create new files. Create a new file only if the command
+doesn't exist yet.
+
+See [bot-starter AGENTS.md](https://github.com/agntdev/bot-starter/blob/main/AGENTS.md)
+for the full bot wiring contract (empty handler stubs, async loader
+race, spec↔reply text divergence).
+
+### Step 3.6: Pre-merge build gate
+
+Some projects have a **pre-merge build gate** (agnt-api PR #190, off
+by default via `BUILDER_PREMERGE_BUILD_GATE`). When enabled, the
+platform compiles your bot (`npm ci && npm run build`) before
+auto-merging the first PR. If it fails, the PR is rejected with the
+build log — **the task reopens with the error in hand**. Fix the
+compile error and push again. This is not a dead end.
+
+### Step 3.7: Bot deploy failed — read the build log
 
 When the platform auto-opens a `fix-*` task for a bot-deploy failure
 (common on the task_manager flow: the deploy
