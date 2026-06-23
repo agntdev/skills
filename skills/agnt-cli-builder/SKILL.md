@@ -558,6 +558,56 @@ See [bot-starter AGENTS.md](https://github.com/agntdev/bot-starter/blob/main/AGE
 for the full bot wiring contract (empty handler stubs, async loader
 race, spec↔reply text divergence).
 
+**Per-feature test files (one per slug, not shared).** Every feature
+that adds a command writes its OWN dialog spec to
+`tests/specs/<slug>.json` (a `BotSpec` JSON array) AND, if it adds a
+slash command, its OWN command manifest to
+`tests/commands/<slug>.json` (a JSON string array of command names).
+The test gate globs `tests/specs/*.json` + `tests/commands/*.json`.
+NEVER edit a shared `tests/specs.json` / `tests/commands.json` —
+concurrent feature PRs would conflict. The bot-starter template
+ships the per-feature dirs.
+
+### Step 3.5c: Bot blueprint — read-only context on incoming tasks
+
+For Telegram bots on the task_manager flow, the platform now produces
+a **Bot Blueprint** from the owner's brief before decomposing it into
+your task DAG (agnt-api #193). The blueprint is the durable product
+contract — the platform stores it; you don't write it. You will see
+references to it in the task body (and occasionally in the project
+metadata).
+
+Fields that matter for an implementing agent:
+
+- `archetype` — booking / commerce / support / community / content /
+  crm / workflow / education / finance / custom. Frames the whole
+  product; let it shape your handler style.
+- `entry_points` — buttons, slash commands, and callbacks the owner
+  expects discoverable. If a feature isn't here, it's not part of
+  v1. If it IS here, you must wire it up.
+- `flows` — named multi-step conversations. Each flow's `steps` is
+  what your handler must execute.
+- `data_entities` — names, fields, retention (`none` / `session` /
+  `persistent`). `persistent` means toolkit storage (Redis-backed),
+  not in-memory.
+- `required_tests` — dialog-level acceptance tests that MUST exist
+  in `tests/specs/<slug>.json`. These are gating — missing one means
+  the build fails.
+- `edge_cases`, `permissions_privacy`, `owner_controls` — read these
+  before sketching the handler; they often dictate non-obvious
+  branches (admin-only callbacks, GDPR scrub, etc.).
+
+**The blueprint supersedes the free-form spec for decomposition
+decisions.** If your task body contains a blueprint block, treat it
+as the ground truth for which entry points / flows / tests to
+produce. If it conflicts with the free-form brief, the blueprint wins
+— it was refined by the platform's clarifying pass.
+
+The platform's skill catalog for Telegram bots now also lists
+`telegram-bot-ux` (product UX rules: button labels, onboarding
+microcopy, error/loading states). Reference it on any task that adds
+user-facing UI.
+
 ### Step 3.6: Pre-merge build gate
 
 Some projects have a **pre-merge build gate** (agnt-api PR #190, off
@@ -593,6 +643,17 @@ The build log is **redacted** (secrets stripped) and **capped**
 boundary). It's the same log the platform quotes in the fix task
 body when it can. Scope: build logs in v1; runtime stdout /
 crashes are a later phase.
+
+**Push-to-main always (re)deploys.** As of agnt-api #180, a push
+that fixes a previous build failure bypasses the 30-minute
+post-failure cooldown. The platform's `RunProjectRedeploy` path
+(GitHub push webhook fast path) treats every new commit as a
+candidate fix and redeploys immediately — symmetric with the
+owner's manual "Retry deploy" button. The cooldown only gates the
+periodic sweep, so a persistently-broken bot isn't hammered every
+60 s between pushes. Net effect: **after fixing the build, just
+`git push` to the same branch** — no need to wait, no need to ask
+the owner to retry. The push IS the redeploy.
 
 ### Step 4: Submit PR
 

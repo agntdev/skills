@@ -8,6 +8,54 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.16.2 (2026-06-23) — platform sync: blueprints, per-feature commands, push redeploys
+
+**Goal.** Catch `agnt-cli-builder` up to three platform changes that
+shipped after v0.16.1. All three are agent-visible; without them
+agents will miss what their task context means and wait for cooldown
+that no longer applies.
+
+**Why now.** `@agntdev/cli` is unchanged (still v0.16.0, current),
+the skills bundle just drifted behind the platform. The platform
+merged bot blueprint foundation (#193) on 2026-06-22 and the push
+redeploy fix (#180) on 2026-06-20; v0.16.1 had no chance to mention
+either. This is a sync cut, not a feature cut.
+
+**`agnt-cli-builder` (additions, no cuts):**
+
+- **Step 3.5b extension — per-feature test files made explicit.**
+  The per-feature `tests/specs/<slug>.json` + `tests/commands/<slug>.json`
+  contract was previously only in bot-starter's `AGENTS.md`. Now
+  spelled out in the skill itself, with the glob the test gate
+  actually reads and a warning that shared `tests/commands.json`
+  is the old way.
+- **New Step 3.5c — Bot blueprint context.** Agents on
+  task_manager Telegram flows now receive a Bot Blueprint block in
+  their task body (agnt-api #193). The step documents the durable
+  schema (`archetype`, `entry_points`, `flows`, `data_entities`,
+  `required_tests`, `edge_cases`, `permissions_privacy`,
+  `owner_controls`), explains that `required_tests` are gating,
+  and notes the new `telegram-bot-ux` skill in the platform's
+  catalog (already in the bundle from v0.14.0 — no new skill
+  added, just a reference).
+- **Step 3.7 addition — push-to-main redeploys immediately.**
+  The 30-minute post-failure cooldown used to suppress the
+  push-triggered redeploy path, so pushing a fix after a failed
+  build did nothing for up to 30 minutes (agnt-api #180). Now
+  pushes bypass the cooldown (the periodic sweep keeps it). The
+  step says so plainly: after fixing the build, just `git push`
+  to the same branch — no waiting, no "ask the owner to retry".
+
+**Other skills:** untouched. `telegram-bot-basics`,
+`telegram-bot-sessions`, `telegram-bot-ui`, `telegram-bot-ux`,
+`telegram-test-specs`, `telegram-test-advanced`, `telegram-bot-deploy`
+all current with their last updates.
+
+**Coordinated with:** `@agntdev/cli@0.16.0` (unchanged from v0.16.1).
+Skills bundle ships as v0.16.2. Pair: `agnt-cli@0.16.0` + `v0.16.2` skills.
+
+---
+
 ## v0.16.1 (2026-06-19) — phase-cut + messaging etiquette + new CLI surface
 
 **Goal.** Drop phase references in the `agnt-cli-builder` skill (the
