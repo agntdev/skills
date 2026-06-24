@@ -23,6 +23,22 @@ license: MIT
 How to make a Telegram bot feel right to humans — copy, flow patterns,
 error UX, loading UX, onboarding, anti-patterns, performance budgets.
 
+> ## ⭐ The #1 rule: a NICE bot is TAPPABLE, not typed
+> The owner is non-technical and so are their users. The bot must be operable
+> by **tapping buttons** — a user should almost never need to remember or type a
+> slash command. Concretely:
+> - Every top-level feature is a **button on the `/start` main menu**, not a
+>   `bot.command(...)`. (In the bot-starter template: `registerMainMenuItem(...)`
+>   + a `.callbackQuery(...)` handler — see [telegram-bot-ui](../telegram-bot-ui/SKILL.md).)
+> - Reserve slash commands for `/start`, `/help`, and genuine free-form typed
+>   input the user already knows how to enter (search query, note, address, date,
+>   time, amount). A bot with 10–20 slash commands is a FAILURE for this audience.
+> - Never show the user raw IDs, JSON, stack traces, or developer jargon. Always
+>   provide an empty state and a plain-language error.
+>
+> The rest of this skill (microcopy, menus, flows, errors) is in service of that
+> rule.
+
 For **how to wire keyboards** (button objects, routing, builders), see
 [telegram-bot-ui](../telegram-bot-ui/SKILL.md). For **what Telegram
 allows** (limits, parse_mode, entities, Rich Messages, Checklists,
