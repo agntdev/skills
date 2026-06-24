@@ -22,6 +22,26 @@ How to wire Telegram keyboards — pure mechanics. For **what the bot
 should say and how it should feel**, see
 [telegram-bot-ux](../telegram-bot-ux/SKILL.md).
 
+> ## ⭐ BUTTON-FIRST — the default for reaching a feature
+> The owners shipping these bots are **non-technical**, and so are their
+> users. People operate the bot by **tapping buttons**, not by memorising
+> slash commands. So a feature is made reachable by **adding a button to the
+> `/start` main menu**, NOT by minting a new `bot.command(...)`.
+>
+> In the bot-starter template this is one line — call
+> `registerMainMenuItem({ label, data })` at the top of your
+> `src/handlers/<slug>.ts` and handle its `data` with `.callbackQuery(...)`;
+> the shipped `/start` renders the aggregate menu. The only slash commands a
+> bot should expose are `/start`, `/help`, and the occasional free-form typed
+> input below. **Do NOT add a slash command per feature** — that is how bots
+> end up with 20+ cryptic, overlapping commands no human can use.
+>
+> This does **not** mean "never use commands": see the
+> [buttons-vs-commands heuristic](#buttons-vs-commands--the-heuristic) — commands
+> and ForceReply are still the right tool for free-form typed input (a search
+> query, note, address, date, time, amount). Buttons for **navigation and
+> choices**; commands for **typing the bot can't predict**.
+
 > **Built for the agntdev pipeline.** See
 > [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the
 > discovery-and-claim loop. This skill teaches the inline-button, menu,
