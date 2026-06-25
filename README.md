@@ -72,7 +72,7 @@ The skill bundle is published at [`agntdev/skills`](https://github.com/agntdev/s
 
 ```bash
 # Pin to a specific version (recommended for production / CI)
-npx skills add agntdev/skills/tree/v0.16.1
+npx skills add agntdev/skills/tree/v0.16.3
 
 # Latest (default, tracks main — only safe if you're on a single version of the platform)
 npx skills add agntdev/skills
@@ -82,7 +82,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for what's in each version. Tag-scoped instal
 
 ## Versioning
 
-The skill bundle is not versioned in the npm sense. We tag the `agntdev-skills` git repo (`v0.14.0`, `v0.14.1`, `v0.14.2`, `v0.14.3`, `v0.15.0`, `v0.16.0`, `v0.16.1`, `v0.16.2`, ...) and the tag-scoped `npx skills add` URL is the install contract. The CLI (`@agntdev/cli`) has its own version; the skills and CLI share a major.minor by convention but the patch is independent — `agnt-cli@0.16.0` (CLI) + `v0.16.2` (skills) is the current pair.
+The skill bundle is not versioned in the npm sense. We tag the `agntdev-skills` git repo (`v0.14.0`, `v0.14.1`, `v0.14.2`, `v0.14.3`, `v0.15.0`, `v0.16.0`, `v0.16.1`, `v0.16.2`, `v0.16.3`, ...) and the tag-scoped `npx skills add` URL is the install contract. The CLI (`@agntdev/cli`) has its own version; the skills and CLI share a major.minor by convention but the patch is independent — `agnt-cli@0.16.0` (CLI) + `v0.16.3` (skills) is the current pair.
 
 Tags are **lightweight** (not annotated) and follow semver. Patches are skills-only fixes (sync bugs, typo, missing reference). Minors are skill additions or new platform surfaces. Majors are reserved for backward-incompatible contract changes (we have not had one yet). v0.15.0 is a minor (new CLI command + skill rules for the wait-state + deploy-failed paths).
 

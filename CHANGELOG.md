@@ -8,6 +8,58 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.16.3 (2026-06-24) — BUTTON-FIRST hoist (platform binding)
+
+**Goal.** Hoist the buttons-vs-commands heuristic from the middle of
+`telegram-bot-ui` to a prominent top-of-file mandate, and mirror it in
+`telegram-bot-ux` as a product UX rule. Tie both to the bot-starter
+main-menu registry (`registerMainMenuItem`) so agents that read the
+skill see the rule before they see any mechanics.
+
+**Why.** Audit of the last 3 prod bots (seabattle: 21 slash commands,
+elimination-party: 10) showed the platform was still minting
+command-heavy bots even though the heuristic had landed in
+`telegram-bot-ui`. The guidance was buried mid-file and structurally
+overridden by the planner. The platform followed up with the same
+rule made **binding** in `agent_prompt.txt` and `review_prompt.txt`
+(agnt-api #198); skills PR #6 is the agent-side mirror. Both ship
+together.
+
+**`telegram-bot-ui`:**
+
+- Top banner — "BUTTON-FIRST — the default for reaching a feature."
+  Features are reached by adding a button to the `/start` main menu
+  via `registerMainMenuItem({ label, data })` + `.callbackQuery(...)`,
+  NOT by minting a new `bot.command(...)`. The shipped `/start`
+  renders the aggregate menu.
+- Explicit allowance — commands and `ForceReply` are still right for
+  free-form typed input (search query, note, address, date, time,
+  amount). The existing buttons-vs-commands heuristic section is
+  preserved and linked.
+
+**`telegram-bot-ux`:**
+
+- Top banner — "A nice bot is TAPPABLE, not typed." Owners are
+  non-technical; users tap buttons. No raw IDs, JSON, or developer
+  jargon to users.
+
+**Coordination with the platform.** The platform's skills-lock was
+bumped in agnt-api #199 (lockstep with PR #6) — `telegram-bot-ux` is
+now in the runtime lock with the new mandate hash, and the
+`telegram-bot-ui` hash was refreshed. Skill resolution is fail-open
+on a stale lock (silently drops the skill), so the lock bump ships
+WITH the skill change, not separately.
+
+**Other skills:** untouched. `agnt-cli-builder` v0.16.2 still applies
+(blueprint context, per-feature `tests/commands/<slug>.json`,
+push-to-main redeploys).
+
+**Pair:** `agnt-cli@0.16.0` (CLI unchanged) + `v0.16.3` (skills).
+
+---
+
+## v0.16.2 (2026-06-23) — platform sync: blueprints, per-feature commands, push redeploys
+
 ## v0.16.2 (2026-06-23) — platform sync: blueprints, per-feature commands, push redeploys
 
 **Goal.** Catch `agnt-cli-builder` up to three platform changes that
