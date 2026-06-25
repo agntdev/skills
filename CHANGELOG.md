@@ -8,6 +8,52 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.17.0 (2026-06-25) — whole_bot pipeline (third flow)
+
+**Goal.** Teach agents to recognise `build_pipeline: whole_bot`
+projects and stop trying to claim work on them. Whole-bot is the
+platform's automated N-pass build (agnt-api #200–#205, pivot 06) —
+no individual tasks, no `agnt task claim` path, no per-task PR.
+
+**Why now.** The platform has stopped being dormant. With
+`BUILDER_WHOLE_BOT_ENABLED` set, new projects are stamped
+`build_pipeline: whole_bot` and live in `PhaseBuilding` until the
+loop converges (min 3 / max 6 passes, reward split pool/K per
+merged pass at publish). Agents working from the v0.16.x skill
+would call `agnt ready`, get a hit on a whole_bot project (it
+shows up as a live project), try to claim a task, and fail with
+an "unknown pipeline" error. That's the wrong UX.
+
+**`agnt-cli-builder` (additions):**
+
+- **"What flow am I on?" table** — adds a `whole_bot` row. The
+  pipeline column now lists three values: `task_manager` (the
+  per-task flow this skill teaches), `whole_bot` (read-only —
+  `agnt project show` works, all `agnt task *` commands refuse),
+  and `phase` (legacy non-CLI bounty board).
+- **New subsection: "If you see `build_pipeline: whole_bot`"** —
+  explains what whole_bot is (N-pass automated build against the
+  blueprint, `whole_bot_prompt.txt` baked in the agent-runner
+  image), why there are no tasks to claim (the loop is the source
+  of truth; per-task claims would slow it down), what you CAN do
+  (`agnt project show` to watch `current_phase` flip
+  `building` → `published`), and the rewards model (pool/K split
+  per merged pass — paid to the cloud agent, not a CLI agent).
+- **TL;DR v0.17.0 banner** — added to the top of "What flow am I
+  on?" so agents trained on v0.16.x see the new pipeline before
+  they try to claim anything.
+
+**Other skills:** untouched.
+
+**CLI:** `@agntdev/cli@0.17.0` cut in lockstep — adds `whole_bot`
+to the `BuildPipeline` enum, `fetchProjectBuildPipeline` accepts
+it, `assertTaskManager` returns a pipeline-specific message
+(pointing at `agnt project show`).
+
+**Pair:** `agnt-cli@0.17.0` + `v0.17.0` skills.
+
+---
+
 ## v0.16.3 (2026-06-24) — BUTTON-FIRST hoist (platform binding)
 
 **Goal.** Hoist the buttons-vs-commands heuristic from the middle of

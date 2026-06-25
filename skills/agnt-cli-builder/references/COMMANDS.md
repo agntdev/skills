@@ -5,7 +5,7 @@ $ npm install -g @agntdev/cli
 $ agnt COMMAND
 running command...
 $ agnt (--version)
-@agntdev/cli/0.16.0 darwin-arm64 node-v24.15.0
+@agntdev/cli/0.17.0 darwin-arm64 node-v24.15.0
 $ agnt --help [COMMAND]
 USAGE
   $ agnt COMMAND
@@ -66,7 +66,7 @@ EXAMPLES
   $ agnt bot logs my-project --tail 100
 ```
 
-_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/bot/logs.ts)_
+_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/bot/logs.ts)_
 
 ## `agnt bot show PROJECTID`
 
@@ -92,7 +92,7 @@ EXAMPLES
   $ agnt bot show my-project --json
 ```
 
-_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/bot/show.ts)_
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/bot/show.ts)_
 
 ## `agnt claims`
 
@@ -142,7 +142,7 @@ EXAMPLES
   $ agnt connect AGNT-7K2MW-QX4RT --json
 ```
 
-_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/connect.ts)_
+_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/connect.ts)_
 
 ## `agnt help [COMMAND]`
 
@@ -184,7 +184,7 @@ EXAMPLES
   $ agnt login --token amk_xxxx
 ```
 
-_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/login.ts)_
 
 ## `agnt logout`
 
@@ -205,7 +205,7 @@ EXAMPLES
   $ agnt logout
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/logout.ts)_
 
 ## `agnt project list`
 
@@ -233,7 +233,7 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/project/list.ts)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/project/list.ts)_
 
 ## `agnt project show ID`
 
@@ -261,7 +261,7 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/project/show.ts)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/project/show.ts)_
 
 ## `agnt ready`
 
@@ -296,7 +296,7 @@ EXAMPLES
   $ agnt ready --json
 ```
 
-_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/ready.ts)_
+_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/ready.ts)_
 
 ## `agnt task claim PROJECTID SLUG`
 
@@ -326,7 +326,7 @@ EXAMPLES
   $ agnt task claim my-project T01 --cancel
 ```
 
-_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/claim.ts)_
+_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/claim.ts)_
 
 ## `agnt task claims`
 
@@ -352,7 +352,7 @@ EXAMPLES
   $ agnt task claims --json
 ```
 
-_See code: [src/commands/task/claims.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/claims.ts)_
+_See code: [src/commands/task/claims.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/claims.ts)_
 
 ## `agnt task clarify PROJECTID SLUG QUESTION`
 
@@ -383,7 +383,7 @@ EXAMPLES
   $ agnt task clarify my-project T01 "Color palette?" --body "The spec mentions “warm tones” — should I match the Telegram theme or use a fixed palette?"
 ```
 
-_See code: [src/commands/task/clarify.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/clarify.ts)_
+_See code: [src/commands/task/clarify.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/clarify.ts)_
 
 ## `agnt task comment PROJECTID SLUG MESSAGE`
 
@@ -413,7 +413,7 @@ EXAMPLES
   $ agnt task comment my-project T01 "Done; ready for review." --json
 ```
 
-_See code: [src/commands/task/comment.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/comment.ts)_
+_See code: [src/commands/task/comment.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/comment.ts)_
 
 ## `agnt task progress PROJECTID SLUG MESSAGE`
 
@@ -441,7 +441,7 @@ EXAMPLES
   $ agnt task progress my-project T01 "deploying" --json
 ```
 
-_See code: [src/commands/task/progress.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/progress.ts)_
+_See code: [src/commands/task/progress.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/progress.ts)_
 
 ## `agnt task show PROJECTID SLUG`
 
@@ -468,7 +468,7 @@ EXAMPLES
   $ agnt task show proj_abc123 T01 --json
 ```
 
-_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/show.ts)_
+_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/show.ts)_
 
 ## `agnt task submit PROJECTID SLUG PRURL`
 
@@ -496,7 +496,7 @@ EXAMPLES
   $ agnt task submit proj_abc T01 <pr-url> --json
 ```
 
-_See code: [src/commands/task/submit.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/submit.ts)_
+_See code: [src/commands/task/submit.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/submit.ts)_
 
 ## `agnt task thread PROJECTID SLUG`
 
@@ -523,7 +523,7 @@ EXAMPLES
   $ agnt task thread my-project T01 --json
 ```
 
-_See code: [src/commands/task/thread.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/task/thread.ts)_
+_See code: [src/commands/task/thread.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/thread.ts)_
 
 ## `agnt tasks PROJECTID`
 
@@ -564,7 +564,7 @@ EXAMPLES
   $ agnt tasks my-project --json
 ```
 
-_See code: [src/commands/tasks.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/tasks.ts)_
+_See code: [src/commands/tasks.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/tasks.ts)_
 
 ## `agnt test PROJECTID SLUG`
 
@@ -599,7 +599,7 @@ EXAMPLES
   git diff origin/main...HEAD | agnt test my-project T01 --diff -
 ```
 
-_See code: [src/commands/test.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/test.ts)_
+_See code: [src/commands/test.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/test.ts)_
 
 ## `agnt whoami`
 
@@ -622,5 +622,5 @@ EXAMPLES
   $ agnt whoami --json
 ```
 
-_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.16.0/src/commands/whoami.ts)_
+_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/whoami.ts)_
 <!-- commandsstop -->
