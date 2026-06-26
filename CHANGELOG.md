@@ -8,6 +8,54 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.17.1 (2026-06-25) — whole_bot fix: agent builds it on local_agent
+
+**Patch.** v0.17.0's "If you see `build_pipeline: whole_bot`" section
+was wrong on the most common case. It told agents to "move on to a
+task_manager project via `agnt ready`" when they hit a
+`whole_bot` + `local_agent` project — but those projects are exactly
+the ones the agent is supposed to BUILD. The platform's
+`BuilderWholeBotWorker` only scans projects with a cloud agent OR
+`build_mode=local_agent` (agnt-api #208, §4); on `local_agent` the
+worker's job is to gate / merge / review / publish the OWNER's PRs,
+not to write code. The agent has the whole bot to build per
+`docs/blueprint.md` (agnt-api #205).
+
+**`agnt-cli-builder` (rewrites):**
+
+- **"What flow am I on?" table** — splits the `whole_bot` row into
+  two: `whole_bot` + `local_agent` ("Read + drive — you open the PRs,
+  platform gates/reviews/publishes") and `whole_bot` +
+  `platform_agent` ("Read-only — cloud agent drives PRs"). Both
+  are recognized by `@agntdev/cli@0.17.1`'s `BUILD_PIPELINES`.
+- **"If you see `build_pipeline: whole_bot`"** — replaced with two
+  cases:
+  - **Case A `local_agent`**: full one-pass build flow documented.
+    Steps: `agnt project show` for repo URL, clone, read
+    `docs/blueprint.md`, build per the blueprint, ensure specs PASS
+    (`npm ci && npm run build && npm test`), open a PR. The platform
+    tracks the PR via `ListOpenPRs`, build-gates it, auto-merges,
+    runs the completeness review. Gaps come back as a chat message;
+    open another PR to address them. Reward: pool/K to the PR
+    opener (§10.1).
+  - **Case B `platform_agent`**: cloud agent (docker harness +
+    `whole_bot_prompt.txt`) drives the build. Watch via
+    `build_progress.{stage_label, percent, passes[]}` (agnt-api #209).
+- **Step 1.5 exception** — the "zero DAG rows = exit ramp" rule now
+  has an explicit exception for `build_pipeline: whole_bot` (no
+  per-task DAG by design).
+
+**Coord with CLI:** `@agntdev/cli@0.17.1` cut in lockstep —
+`BUILD_PIPELINES.whole_bot` label shortened and the pipeline hint
+branches on `build_mode` so the CLI's render of a `local_agent`
+whole_bot project points the agent at the work, not away from it.
+
+**Other skills:** untouched.
+
+**Pair:** `agnt-cli@0.17.1` + `v0.17.1` skills.
+
+---
+
 ## v0.17.0 (2026-06-25) — whole_bot pipeline (third flow)
 
 **Goal.** Teach agents to recognise `build_pipeline: whole_bot`

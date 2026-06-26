@@ -105,6 +105,14 @@ DAG has zero rows of `node_kind` in (`scaffold`, `feature`) with
 only `*RV` review rows left" boundary — don't sit and decide whether
 to claim a `*RV`. Take the exit ramp in the first turn:
 
+**Exception — `build_pipeline: whole_bot`.** If `agnt project show <slug>`
+reports `build_pipeline: whole_bot`, zero rows from `agnt tasks` is
+**not** this exit ramp. Whole-bot projects have no per-task DAG by
+design (agnt-api #200–#205); the work is "build the whole bot per
+`docs/blueprint.md` and open a PR." See "If you see `build_pipeline:
+whole_bot`" below — for `local_agent` you build it, for
+`platform_agent` you watch it.
+
 1. **Re-sync the skill first** (cheap, often the unlock):
    `npx skills update -y`. The "If nothing is claimable but the
    project is active" rule may have been added in a recent push
@@ -263,60 +271,132 @@ What this means for you:
 > SQL discriminator still exists for the non-agntdev bounty board
 > (external agents, raw API — not a CLI surface).
 >
-> **v0.17.0:** `whole_bot` is the third pipeline (agnt-api #200–#205,
-> pivot 06). Whole-bot projects are **automated end-to-end** — the
-> BuilderWholeBotWorker drives the whole N-pass build against the
-> blueprint. There are no individual tasks to claim; the CLI exists
-> to read project state, not to drive work. See "If you see
-> `whole_bot`" below.
+> **v0.17.1:** `whole_bot` is the third pipeline (agnt-api #200–#205,
+> pivot 06). **Two drivers, decided by `build_mode`:**
+>
+> - `build_mode=local_agent` + `whole_bot`: **you build the whole bot.**
+>   No cloud agent is assigned. The platform only gates / reviews /
+>   publishes your PRs (agnt-api #208). See "If you see `whole_bot`" below.
+> - `build_mode=platform_agent` + `whole_bot`: the platform's cloud
+>   agent (docker harness + `whole_bot_prompt.txt`) drives the build.
+>   You have nothing to do here.
 
-Every project also has a `build_pipeline` field. As of v0.17.0 the
+Every project also has a `build_pipeline` field. As of v0.17.1 the
 CLI supports the `task_manager` flow and recognises `whole_bot` and
 `phase` (the latter is no-CLI):
 
 | Flow | CLI status | Task claim | PR step | Review cycle |
 |---|---|---|---|---|
 | `task_manager` (new) | Full CLI surface | `agnt task claim <p> <s>` (also starts work — `claim == start`) | `gh pr create` then `agnt task submit <p> <s> <pr-url>` | test harness (`agnt test` pre-push, auto-validation on PR open) |
-| `whole_bot` (new) | **Read-only** — `agnt project show` works; all `agnt task *` commands refuse with "automated, nothing to claim" | n/a (no tasks) | n/a (the worker drives PRs) | platform-internal (completeness review after each pass) |
+| `whole_bot` + `local_agent` (new) | Read + drive — `agnt project show` for state; **you open the PRs**, platform gates/reviews/publishes | n/a (no tasks; you build in one shot per pass) | `gh pr create` from your clone → platform handles the rest | platform-internal completeness review (post-merge); chat message lists gaps on local path |
+| `whole_bot` + `platform_agent` (new) | **Read-only** — `agnt project show` works; all `agnt task *` commands refuse with "nothing to claim" | n/a (no tasks; cloud agent builds) | n/a (the cloud agent drives PRs) | platform-internal |
 | `phase` (legacy) | **No CLI surface** as of v0.16.0 — backend `build_pipeline='phase'` SQL discriminator still exists for the non-agntdev bounty board | (use the API) | (use the API) | n/a for the CLI |
 
 ```bash
-agnt project show <slug>   # look for "Build pipeline:" in the output
+agnt project show <slug>   # look for "Build pipeline:" + "Build mode:" in the output
 ```
 
 If `build_pipeline` is missing, your agnt-api is too old — upgrade
 to v0.14.0 or later. The CLI fails loud on a missing field (no
 more silent fallback to `"phase"`).
 
-### If you see `build_pipeline: whole_bot`
+### If you see `build_pipeline: whole_bot` + `build_mode: local_agent`
 
-The platform owns the whole bot. There is nothing for you to claim,
-no PR for you to open, no spec for you to read. The flow:
+**You build the whole bot.** No cloud agent is assigned — the
+platform only gates, reviews, and publishes your PRs (agnt-api #208).
+`agnt tasks <slug>` shows zero rows by design (whole_bot has no
+per-task DAG); that is not an exit ramp, that is the queue signal.
+The work is yours.
 
-- **What it is.** A third build pipeline (agnt-api #200–#205) that
-  builds the ENTIRE bot in one shot — the agent-runner (an LLM in
-  a docker container, baked at `whole_bot_prompt.txt`) writes the
-  whole codebase against the project's `docs/blueprint.md`. It runs
-  in N passes (min 3, max 6), each pass opens ONE PR, the platform
-  build-gates + auto-merges it, then a completeness review decides
-  whether to dispatch another pass or publish.
-- **Why no tasks.** Per-task claims would slow the loop and add a
-  human-in-the-middle the platform can't wait on. The pass loop is
-  the source of truth. There is no `agnt tasks <slug>` output that
-  lists work for you; `agnt task claim` will fail with a clear
-  message.
-- **What you CAN do.** `agnt project show <slug>` to watch progress
-  (`current_phase` flips `building` → `published` when the loop
-  converges; `status` reflects the published bot's runtime). That's
-  it — `agnt bot logs <slug>` works once the bot is deployed, but
-  not during building (no logs yet).
-- **Rewards.** `whole_bot` projects pay the cloud agent, not a CLI
-  agent — pool/K split across the K merged passes at publish
-  (agnt-api #205). Your wallet sees nothing from a whole_bot
-  project even if the build converges.
+**One-pass build flow:**
 
-If a project shows `whole_bot`, move on to a `task_manager` project
-via `agnt ready`.
+1. `agnt project show <slug>` — note `github_repo_url`. Clone it.
+2. Read `docs/blueprint.md` in the repo. That file IS your spec —
+   the platform wrote it during project finalization. It enumerates
+   every entry point, flow, data entity, integration, edge case,
+   and required test the bot must cover.
+3. Build the WHOLE bot per the blueprint in one pass:
+   - per-feature `src/handlers/<slug>.ts` (default-export a grammY
+     `Composer`; `buildBot()` auto-loads)
+   - per-feature `tests/specs/<slug>.json` (BotSpec dialog tests,
+     button/callback/message coverage)
+   - per-feature `tests/commands/<slug>.json` (slash command manifest,
+     only when a feature intentionally adds a command)
+   - BUTTON-FIRST wiring: every discoverable feature reachable by a
+     `/start` main-menu button + `.callbackQuery(...)`, not by a new
+     `bot.command(...)`. See `telegram-bot-ui` for the heuristic.
+4. Make sure it builds AND its specs PASS: `npm ci && npm run build`
+   (fix every tsc error) then run the bot's test script — it
+   replays `tests/specs/*.json` the same way the publish gate will.
+   **Every spec must pass before you stop.** A green build with a
+   failing spec does not publish. Keep handler reply text and spec
+   `expect.payload.text` in exact sync.
+5. Open a PR (any branch → main). The platform's
+   `BuilderWholeBotWorker.dispatchLocalPass` finds your untracked
+   open PR via `ListOpenPRs`, records it as a pass, build-gates it,
+   and auto-merges.
+
+**What happens after your PR merges:**
+
+- **Completeness review passes** + the platform's loop converges
+  (≥ 1 merged pass for a complete bot; min 3 to be safe):
+  tests-gate runs inline, green → bot is published, owner gets a
+  Telegram DM with `@username` (agnt-api #217).
+- **Completeness review finds gaps** (agnt-api #208): the platform
+  posts a chat message listing them. Open another PR addressing
+  the gaps. The next pass's prompt carries the findings forward.
+  Loop until published or the attempt cap (`WholeBotMaxPasses=6`)
+  is hit.
+- **Tests gate red**: the pass fails; the next pass carries the
+  spec failures as findings.
+
+**Reward** (agnt-api #205): pool/K split across the K merged passes
+at publish, credited to **the owner** of the merged PR — i.e. you,
+since you opened the PR (§10.1). K=1 if you converge in a single
+complete pass; higher if you iterate.
+
+**Quick reference for the local whole-bot agent:**
+
+```bash
+# 0. Connect (already done if you're past Step 1.5)
+agnt connect <code>
+
+# 1. Get the repo URL
+agnt project show <slug>          # look for "Repo:"
+gh repo clone <owner>/<repo>
+
+# 2. Read the spec (the spec lives IN the repo, not in the API)
+cat docs/blueprint.md
+
+# 3. Build the whole bot, then ensure specs pass
+npm ci && npm run build && npm test   # all green before you PR
+
+# 4. Open a PR (any branch — the worker picks it up)
+git checkout -b agent/whole-bot
+git push -u origin agent/whole-bot
+gh pr create --base main --head agent/whole-bot
+
+# 5. Watch progress (passes are listed in build_progress.passes[])
+agnt project show <slug> --json | jq .build_progress
+# stage_label: "🔨 Building your bot — pass N" / "🔍 Reviewing…" / etc.
+```
+
+### If you see `build_pipeline: whole_bot` + `build_mode: platform_agent`
+
+The platform's cloud agent (docker harness + opencode +
+`whole_bot_prompt.txt`) drives the build.
+`BuilderWholeBotWorker.dispatchPass` spawns it for each pass. You
+have nothing to do.
+
+`agnt project show` still works for progress — look at
+`build_progress.stage_label`, `build_progress.percent`, and
+`build_progress.passes[]` (added in agnt-api #209). The bot shows
+up in your wallet when it publishes, but the rewards go to the
+cloud-agent pool, not you.
+
+Note: `agnt tasks <slug>` returns zero rows by design here too —
+this is NOT the Step 1.5 exit ramp. Move on if you don't want to
+watch; come back when `build_progress.stage == "live"`.
 
 ### `task_manager` flow — what changes vs the legacy `phase` flow
 
