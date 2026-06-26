@@ -8,6 +8,95 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.18.0 (2026-06-25) — whole_bot only (drop task_manager + phase + TON)
+
+**MINOR** cut that mirrors the upstream agnt-api removals
+(`#240` drop task_manager + phase pipelines, `#242` drop
+task_manager schema, `#233` drop TON economy, `#244` drop
+`/api/builder/admin`). The skill bundle slims down to the
+whole_bot surface: build the bot per `docs/blueprint.md` + ship
+PR; platform gates/reviews/publishes.
+
+**SECURITY FIXES (mandatory):**
+
+- **`telegram-bot-ux` §10 performance budgets** — removed a
+  reference to `wyu-telegram.com` flagged as a phishing site by
+  Agent Trust Hub (CRITICAL). Replaced with a neutral Telegram
+  UX reference.
+- **`agnt-cli-builder`** — replaced literal credential examples
+  `AGNT-XXXXX-XXXXX` and `amk_xxxx` with `<connect-code>` /
+  `<agent-key>` placeholders. W007 (HIGH, "insecure credential
+  handling") — reduces LLM fabrication risk by removing the
+  verbatim patterns.
+- **`agnt-cli-builder`** — replaced literal `api.agnt-gm.ai`
+  references with `${AGNT_API_BASE:-...}` env-var form. W012
+  (MEDIUM, "unverifiable external dependency") — the URL is now
+  surfaced as a config, not a baked-in instruction.
+- **`telegram-test-specs`** — added explicit safety note about
+  in-process bot execution (E006, CRITICAL, "malicious code
+  pattern"): the harness inherits whatever the imported bot code
+  can reach (filesystem, env, network). Don't point the harness
+  at unaudited bot code; treat the verdict nonce as a deploy
+  secret.
+
+**CONTENT UPDATES (whole_bot only):**
+
+- **`agnt-cli-builder` (rewrites)** — full rewrite of the
+  description, cold-start TL;DR, "On Activation" flow, "Coming
+  back to a half-done project", "What builders do", "Quick
+  Start", "Quick Reference", "What mode am I in?", "What flow am
+  I on?", "If you see `build_pipeline: whole_bot`", "Step 3:
+  Implement", "Step 3.5: Bot file structure", "Step 3.5b:
+  Blueprint — the build contract", "Step 3.6: Pre-merge build
+  gate", "Step 3.7: Build log", "Output format" examples, and
+  "Connect codes" example. Removed: `agnt ready`, `agnt tasks
+  <slug>`, `agnt task claims`, `agnt task claim/submit/thread/
+  comment/progress/clarify/show`, `Messaging etiquette
+  (task_manager)`, `Task DAG`, `agnt task * command reference`,
+  `agnt test` (cut in `@agntdev/cli@0.18.0` — preview-review
+  endpoint deleted in agnt-api #240), `agent/<task-slug>` branch
+  format, `[<task-slug>] <task title>` PR title format,
+  `ton_reward`, the `/dag` and `/builder/tasks` endpoint
+  references. The whole_bot flow (read blueprint → build per
+  spec → ensure `npm test` passes → ship a PR) is now the only
+  flow the skill teaches.
+- **`agnt-cli-builder` (cloud-agent STOP gate)** — added an
+  explicit STOP gate in "On Activation" and "What mode am I in?":
+  if `build_mode: platform_agent` is already set, the cloud
+  agent (docker harness + `whole_bot_prompt.txt`) is driving the
+  build, and the local agent must not interfere. The skill treats
+  local_agent and platform_agent as the same CLI/flow (cloud
+  agent is just the dockerized version of the same agent) — the
+  STOP gate is the only behavioral fork.
+- **`agnt-cli-builder/references/REFERENCE.md`** — replaced the
+  "Claimable Gate" + claim lifecycle content with the whole_bot
+  pass cap / rebuild / Ship-an-update / exit codes / env vars
+  / auth model. TON wallet, `agnt balance`, `agnt payouts`, and
+  `builder_cloud_agents` references all gone (post #233 / #240
+  / #244).
+- **`telegram-bot-ux`** — removed the `sendPaidMedia` (Bot API
+  10.1) section (W009, MEDIUM, "direct money access capability").
+  Whole_bot projects don't accept payments; the cloud-agent
+  assignment that stays is paid by the owner from the mini-app
+  (not a payment-accepting bot).
+- **`telegram-bot-basics`** — removed the `sendPaidMedia` row
+  and the "Telegram Stars / createInvoiceLink" paragraph from
+  §10 / §11. The reference table of media methods now lists
+  only Bot API 9.x / 10.0 methods.
+
+**Removed content:**
+- TON economy docs (post agnt-api #233 / #234 / #238)
+- `agnt task *` command surface (post agnt-api #240 / #242)
+- `agnt test` command (post agnt-api #240; preview-review route
+  deleted)
+- `phase` pipeline references (post agnt-api #240)
+
+**Test count:** unchanged (no skill tests).
+
+**Pair:** `agnt-cli@0.18.0` + `v0.18.0` skills.
+
+---
+
 ## v0.17.1 (2026-06-25) — whole_bot fix: agent builds it on local_agent
 
 **Patch.** v0.17.0's "If you see `build_pipeline: whole_bot`" section

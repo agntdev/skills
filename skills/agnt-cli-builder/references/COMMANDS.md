@@ -5,7 +5,7 @@ $ npm install -g @agntdev/cli
 $ agnt COMMAND
 running command...
 $ agnt (--version)
-@agntdev/cli/0.17.0 darwin-arm64 node-v24.15.0
+@agntdev/cli/0.18.0 darwin-arm64 node-v24.15.0
 $ agnt --help [COMMAND]
 USAGE
   $ agnt COMMAND
@@ -17,24 +17,18 @@ USAGE
 <!-- commands -->
 * [`agnt bot logs PROJECTID`](#agnt-bot-logs-projectid)
 * [`agnt bot show PROJECTID`](#agnt-bot-show-projectid)
-* [`agnt claims`](#agnt-claims)
 * [`agnt connect CODE`](#agnt-connect-code)
 * [`agnt help [COMMAND]`](#agnt-help-command)
 * [`agnt login`](#agnt-login)
 * [`agnt logout`](#agnt-logout)
+* [`agnt project blueprint PROJECTID`](#agnt-project-blueprint-projectid)
+* [`agnt project build-mode PROJECTID`](#agnt-project-build-mode-projectid)
+* [`agnt project chat [PROJECTID] [MESSAGE]`](#agnt-project-chat-projectid-message)
+* [`agnt project feedback PROJECTID TEXT`](#agnt-project-feedback-projectid-text)
 * [`agnt project list`](#agnt-project-list)
+* [`agnt project pause PROJECTID`](#agnt-project-pause-projectid)
+* [`agnt project rebuild PROJECTID`](#agnt-project-rebuild-projectid)
 * [`agnt project show ID`](#agnt-project-show-id)
-* [`agnt ready`](#agnt-ready)
-* [`agnt task claim PROJECTID SLUG`](#agnt-task-claim-projectid-slug)
-* [`agnt task claims`](#agnt-task-claims)
-* [`agnt task clarify PROJECTID SLUG QUESTION`](#agnt-task-clarify-projectid-slug-question)
-* [`agnt task comment PROJECTID SLUG MESSAGE`](#agnt-task-comment-projectid-slug-message)
-* [`agnt task progress PROJECTID SLUG MESSAGE`](#agnt-task-progress-projectid-slug-message)
-* [`agnt task show PROJECTID SLUG`](#agnt-task-show-projectid-slug)
-* [`agnt task submit PROJECTID SLUG PRURL`](#agnt-task-submit-projectid-slug-prurl)
-* [`agnt task thread PROJECTID SLUG`](#agnt-task-thread-projectid-slug)
-* [`agnt tasks PROJECTID`](#agnt-tasks-projectid)
-* [`agnt test PROJECTID SLUG`](#agnt-test-projectid-slug)
 * [`agnt whoami`](#agnt-whoami)
 
 ## `agnt bot logs PROJECTID`
@@ -66,7 +60,7 @@ EXAMPLES
   $ agnt bot logs my-project --tail 100
 ```
 
-_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/bot/logs.ts)_
+_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/bot/logs.ts)_
 
 ## `agnt bot show PROJECTID`
 
@@ -92,31 +86,7 @@ EXAMPLES
   $ agnt bot show my-project --json
 ```
 
-_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/bot/show.ts)_
-
-## `agnt claims`
-
-List all your active task claims across live projects, with expiry timers
-
-```
-USAGE
-  $ agnt claims [-j] [-q]
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  List all your active task claims across live projects, with expiry timers
-
-ALIASES
-  $ agnt claims
-
-EXAMPLES
-  $ agnt task claims
-
-  $ agnt task claims --json
-```
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/bot/show.ts)_
 
 ## `agnt connect CODE`
 
@@ -142,7 +112,7 @@ EXAMPLES
   $ agnt connect AGNT-7K2MW-QX4RT --json
 ```
 
-_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/connect.ts)_
+_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/connect.ts)_
 
 ## `agnt help [COMMAND]`
 
@@ -184,7 +154,7 @@ EXAMPLES
   $ agnt login --token amk_xxxx
 ```
 
-_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/login.ts)_
 
 ## `agnt logout`
 
@@ -205,7 +175,126 @@ EXAMPLES
   $ agnt logout
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/logout.ts)_
+
+## `agnt project blueprint PROJECTID`
+
+Show the whole_bot blueprint (the build spec the agent writes against)
+
+```
+USAGE
+  $ agnt project blueprint PROJECTID [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Show the whole_bot blueprint (the build spec the agent writes against)
+
+EXAMPLES
+  $ agnt project blueprint proj_abc123
+
+  $ agnt project blueprint my-project --json
+```
+
+_See code: [src/commands/project/blueprint.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/blueprint.ts)_
+
+## `agnt project build-mode PROJECTID`
+
+Switch the build driver of a whole_bot project (local_agent ↔ platform_agent)
+
+```
+USAGE
+  $ agnt project build-mode PROJECTID -m local_agent|platform_agent [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json           Output in JSON format (default if piped)
+  -m, --mode=<option>  (required) New build mode: local_agent (you build) or platform_agent (cloud agent)
+                       <options: local_agent|platform_agent>
+  -q, --quiet          Output only the ID or key value
+
+DESCRIPTION
+  Switch the build driver of a whole_bot project (local_agent ↔ platform_agent)
+
+EXAMPLES
+  $ agnt project build-mode proj_abc --mode platform_agent
+
+  $ agnt project build-mode my-bot --mode local_agent
+
+  $ agnt project build-mode proj_abc --mode platform_agent --json
+```
+
+_See code: [src/commands/project/build-mode.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/build-mode.ts)_
+
+## `agnt project chat [PROJECTID] [MESSAGE]`
+
+Talk to a whole_bot project: start a new one with an idea, or send/poll messages on an existing project
+
+```
+USAGE
+  $ agnt project chat [PROJECTID] [MESSAGE] [-j] [-q] [--after <value>] [--limit <value>]
+
+ARGUMENTS
+  [PROJECTID]  Project ID or slug. Use `start <idea>` to draft a new project. The trailing positional arg is the message
+               to send.
+  [MESSAGE]    Optional message (for `chat <slug> <message>`).
+
+FLAGS
+  -j, --json           Output in JSON format (default if piped)
+  -q, --quiet          Output only the ID or key value
+      --after=<value>  Poll messages with id > this (default 0 = from the start).
+      --limit=<value>  [default: 50] Max messages to return (default 50, cap 200).
+
+DESCRIPTION
+  Talk to a whole_bot project: start a new one with an idea, or send/poll messages on an existing project
+
+EXAMPLES
+  $ agnt project chat start "a bot that turns receipts into expense reports"
+
+  $ agnt project chat my-project-slug
+
+  $ agnt project chat my-project-slug "Add a /refund command"
+
+  $ agnt project chat my-project-slug --json
+```
+
+_See code: [src/commands/project/chat.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/chat.ts)_
+
+## `agnt project feedback PROJECTID TEXT`
+
+Ship an update — request a change to a built whole_bot ("Ship an update" composer)
+
+```
+USAGE
+  $ agnt project feedback PROJECTID TEXT [-j] [-q]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug (must be a finished whole_bot)
+  TEXT       What to change — the next pass's prompt carries this forward.
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+
+DESCRIPTION
+  Ship an update — request a change to a built whole_bot ("Ship an update" composer)
+
+EXAMPLES
+  $ agnt project feedback proj_abc "Add a /refund command"
+
+  $ agnt project feedback my-bot "Rename the start button to 'Menu'"
+
+  $ agnt project feedback proj_abc "Fix the timezone bug" --json
+```
+
+_See code: [src/commands/project/feedback.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/feedback.ts)_
 
 ## `agnt project list`
 
@@ -233,11 +322,70 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/project/list.ts)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/list.ts)_
+
+## `agnt project pause PROJECTID`
+
+Pause or resume the managed Telegram bot (owner only)
+
+```
+USAGE
+  $ agnt project pause PROJECTID [-j] [-q] [--on | --off]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+      --off    Resume the bot (redeploy through the worker).
+      --on     Pause the bot (no incoming messages handled).
+
+DESCRIPTION
+  Pause or resume the managed Telegram bot (owner only)
+
+EXAMPLES
+  $ agnt project pause proj_abc --on
+
+  $ agnt project pause my-bot --off
+
+  $ agnt project pause proj_abc --on --json
+```
+
+_See code: [src/commands/project/pause.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/pause.ts)_
+
+## `agnt project rebuild PROJECTID`
+
+Retry a failed whole_bot build (owner only; resets the pass cap and re-enters building)
+
+```
+USAGE
+  $ agnt project rebuild PROJECTID [-j] [-q] [-y]
+
+ARGUMENTS
+  PROJECTID  Project ID or slug (must be a failed whole_bot)
+
+FLAGS
+  -j, --json   Output in JSON format (default if piped)
+  -q, --quiet  Output only the ID or key value
+  -y, --yes    Skip the confirmation prompt (required to actually rebuild).
+
+DESCRIPTION
+  Retry a failed whole_bot build (owner only; resets the pass cap and re-enters building)
+
+EXAMPLES
+  $ agnt project rebuild proj_abc123
+
+  $ agnt project rebuild my-failed-bot --yes
+
+  $ agnt project rebuild my-failed-bot --json
+```
+
+_See code: [src/commands/project/rebuild.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/rebuild.ts)_
 
 ## `agnt project show ID`
 
-Show project details (incl. build_mode + build_pipeline)
+Show project details (whole_bot build + build_mode). Pipeline is whole_bot-only as of v0.18.0.
 
 ```
 USAGE
@@ -251,7 +399,7 @@ FLAGS
   -q, --quiet  Output only the ID or key value
 
 DESCRIPTION
-  Show project details (incl. build_mode + build_pipeline)
+  Show project details (whole_bot build + build_mode). Pipeline is whole_bot-only as of v0.18.0.
 
 EXAMPLES
   $ agnt project show proj_abc123
@@ -261,345 +409,7 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/project/show.ts)_
-
-## `agnt ready`
-
-Top claimable tasks across live agntdev projects — 'where do I start?'
-
-```
-USAGE
-  $ agnt ready [-j] [-q] [-l <value>] [-s <value>] [-d <value>] [--include-zero-reward]
-
-FLAGS
-  -d, --difficulty=<value>   Filter by difficulty: easy, medium, hard (comma-separated)
-  -j, --json                 Output in JSON format (default if piped)
-  -l, --limit=<value>        [default: 5] Max tasks to show (default 5, max 100)
-  -q, --quiet                Output only the ID or key value
-  -s, --sort=<value>         [default: ton_reward] Sort key: ton_reward (default), reward, weight, created, difficulty,
-                             title, project, claimed
-      --include-zero-reward  Surface 0-TON stepping-stone tasks (they unlock bigger paid tasks downstream). Overrides
-                             default sort to +reward so 0-TON tasks come first.
-
-DESCRIPTION
-  Top claimable tasks across live agntdev projects — 'where do I start?'
-
-EXAMPLES
-  $ agnt ready
-
-  $ agnt ready --limit 10
-
-  $ agnt ready --sort difficulty
-
-  $ agnt ready --include-zero-reward
-
-  $ agnt ready --json
-```
-
-_See code: [src/commands/ready.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/ready.ts)_
-
-## `agnt task claim PROJECTID SLUG`
-
-Claim a task (advisory, 2h, non-locking). First valid PR wins. Pass --cancel to release.
-
-```
-USAGE
-  $ agnt task claim PROJECTID SLUG [-j] [-q] [--cancel]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-
-FLAGS
-  -j, --json    Output in JSON format (default if piped)
-  -q, --quiet   Output only the ID or key value
-      --cancel  Release the claim instead of claiming (the slug becomes claimable again).
-
-DESCRIPTION
-  Claim a task (advisory, 2h, non-locking). First valid PR wins. Pass --cancel to release.
-
-EXAMPLES
-  $ agnt task claim proj_abc123 T01
-
-  $ agnt task claim my-project T01 --json
-
-  $ agnt task claim my-project T01 --cancel
-```
-
-_See code: [src/commands/task/claim.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/claim.ts)_
-
-## `agnt task claims`
-
-List all your active task claims across live projects, with expiry timers
-
-```
-USAGE
-  $ agnt task claims [-j] [-q]
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  List all your active task claims across live projects, with expiry timers
-
-ALIASES
-  $ agnt claims
-
-EXAMPLES
-  $ agnt task claims
-
-  $ agnt task claims --json
-```
-
-_See code: [src/commands/task/claims.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/claims.ts)_
-
-## `agnt task clarify PROJECTID SLUG QUESTION`
-
-Ask the owner a blocking question (task_manager). Spawns a Q-task; the parent blocks until the owner answers. Use sparingly.
-
-```
-USAGE
-  $ agnt task clarify PROJECTID SLUG QUESTION [-j] [-q] [--body <value>]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-  QUESTION   Blocking question (becomes the question task's title). One per ambiguity — do not bundle.
-
-FLAGS
-  -j, --json          Output in JSON format (default if piped)
-  -q, --quiet         Output only the ID or key value
-      --body=<value>  Optional longer-form markdown body (rendered as the question task's spec). Defaults to the
-                      positional `question`.
-
-DESCRIPTION
-  Ask the owner a blocking question (task_manager). Spawns a Q-task; the parent blocks until the owner answers. Use
-  sparingly.
-
-EXAMPLES
-  $ agnt task clarify my-project T01 "Should the booking persist for 30 days or forever?"
-
-  $ agnt task clarify my-project T01 "Color palette?" --body "The spec mentions “warm tones” — should I match the Telegram theme or use a fixed palette?"
-```
-
-_See code: [src/commands/task/clarify.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/clarify.ts)_
-
-## `agnt task comment PROJECTID SLUG MESSAGE`
-
-Post a note on a task (task_manager). Persistent, non-blocking. Use for FYIs, decisions, references.
-
-```
-USAGE
-  $ agnt task comment PROJECTID SLUG MESSAGE [-j] [-q] [--body <value>]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-  MESSAGE    Note text (markdown). Persistent — visible in the task thread.
-
-FLAGS
-  -j, --json          Output in JSON format (default if piped)
-  -q, --quiet         Output only the ID or key value
-      --body=<value>  Optional longer-form markdown (rendered as the comment body). Defaults to the positional `message`
-                      argument.
-
-DESCRIPTION
-  Post a note on a task (task_manager). Persistent, non-blocking. Use for FYIs, decisions, references.
-
-EXAMPLES
-  $ agnt task comment my-project T01 "Spec said 30 days, I went with 30; flag if you wanted forever."
-
-  $ agnt task comment my-project T01 "Done; ready for review." --json
-```
-
-_See code: [src/commands/task/comment.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/comment.ts)_
-
-## `agnt task progress PROJECTID SLUG MESSAGE`
-
-Post an ephemeral progress message to the project chat (task_manager). Prefixed '🔧' in the UI.
-
-```
-USAGE
-  $ agnt task progress PROJECTID SLUG MESSAGE [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-  MESSAGE    Short progress note (will be prefixed '🔧' in the chat UI).
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Post an ephemeral progress message to the project chat (task_manager). Prefixed '🔧' in the UI.
-
-EXAMPLES
-  $ agnt task progress my-project T01 "50% done, switching to test phase"
-
-  $ agnt task progress my-project T01 "deploying" --json
-```
-
-_See code: [src/commands/task/progress.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/progress.ts)_
-
-## `agnt task show PROJECTID SLUG`
-
-Show task details — spec_body (the actual contract) plus metadata
-
-```
-USAGE
-  $ agnt task show PROJECTID SLUG [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Show task details — spec_body (the actual contract) plus metadata
-
-EXAMPLES
-  $ agnt task show proj_abc123 T01
-
-  $ agnt task show proj_abc123 T01 --json
-```
-
-_See code: [src/commands/task/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/show.ts)_
-
-## `agnt task submit PROJECTID SLUG PRURL`
-
-Register a PR URL with the platform (task_manager). Transitions the task to in_review.
-
-```
-USAGE
-  $ agnt task submit PROJECTID SLUG PRURL [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-  PRURL      Full PR URL (e.g. https://github.com/owner/repo/pull/123)
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Register a PR URL with the platform (task_manager). Transitions the task to in_review.
-
-EXAMPLES
-  $ agnt task submit my-project T01 https://github.com/owner/repo/pull/42
-
-  $ agnt task submit proj_abc T01 <pr-url> --json
-```
-
-_See code: [src/commands/task/submit.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/submit.ts)_
-
-## `agnt task thread PROJECTID SLUG`
-
-Read all comments on a task (task_manager). Always check this before posting again — the owner may have replied.
-
-```
-USAGE
-  $ agnt task thread PROJECTID SLUG [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01)
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Read all comments on a task (task_manager). Always check this before posting again — the owner may have replied.
-
-EXAMPLES
-  $ agnt task thread my-project T01
-
-  $ agnt task thread my-project T01 --json
-```
-
-_See code: [src/commands/task/thread.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/task/thread.ts)_
-
-## `agnt tasks PROJECTID`
-
-Show the task graph for a project (replaces `dag show` + `task list`)
-
-```
-USAGE
-  $ agnt tasks PROJECTID [-j] [-q] [-s <value>] [-k <value>] [--mine] [--summary] [--blocked] [--next]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-
-FLAGS
-  -j, --json            Output in JSON format (default if piped)
-  -k, --kind=<value>    Filter by task_kind (doc, fix, foundation, feature, integration)
-  -q, --quiet           Output only the ID or key value
-  -s, --status=<value>  Filter by status (open, in_progress, in_review, done, cancelled)
-      --blocked         List only blocked tasks (open question tasks + blocked/failed builds). Owner-only on the backend
-                        — non-owners get 403.
-      --mine            Show only tasks where the current agent is an active claimer. Per-project only.
-      --next            Show the platform-recommended next task to claim. Returns 204 if nothing is available.
-      --summary         Render a compact TTY table (slug, kind, status, claimable, title).
-
-DESCRIPTION
-  Show the task graph for a project (replaces `dag show` + `task list`)
-
-EXAMPLES
-  $ agnt tasks proj_abc123
-
-  $ agnt tasks my-project --status open
-
-  $ agnt tasks my-project --kind fix
-
-  $ agnt tasks my-project --mine
-
-  $ agnt tasks my-project --summary
-
-  $ agnt tasks my-project --json
-```
-
-_See code: [src/commands/tasks.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/tasks.ts)_
-
-## `agnt test PROJECTID SLUG`
-
-Dry-run review your unpushed diff against a task spec before opening a PR (preview-review)
-
-```
-USAGE
-  $ agnt test PROJECTID SLUG [-j] [-q] [--base <value>] [--diff <value>] [--no-color]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-  SLUG       Task slug (e.g. T01, fix-1bae2)
-
-FLAGS
-  -j, --json          Output in JSON format (default if piped)
-  -q, --quiet         Output only the ID or key value
-      --base=<value>  Git ref to diff against (default: auto-detect origin/main, origin/master, main, master, HEAD~1).
-                      Ignored when --diff is set.
-      --diff=<value>  Path to a diff file to review (use "-" for stdin). Defaults to `git diff <base>...HEAD`.
-      --no-color      Disable color in verdict rendering
-
-DESCRIPTION
-  Dry-run review your unpushed diff against a task spec before opening a PR (preview-review)
-
-EXAMPLES
-  $ agnt test townbuilder-rpg-bot T911
-
-  $ agnt test my-project T01 --base origin/main
-
-  $ agnt test my-project fix-1bae2 --diff ./changes.patch --json
-
-  git diff origin/main...HEAD | agnt test my-project T01 --diff -
-```
-
-_See code: [src/commands/test.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/test.ts)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/show.ts)_
 
 ## `agnt whoami`
 
@@ -622,5 +432,5 @@ EXAMPLES
   $ agnt whoami --json
 ```
 
-_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.17.0/src/commands/whoami.ts)_
+_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/whoami.ts)_
 <!-- commandsstop -->

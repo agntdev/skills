@@ -7,6 +7,20 @@ description: >
   Tests are the objective review gate — all specs must pass for the bot to publish.
   Triggers: write bot tests, dialog specs, harness, command coverage.
 compatibility: Requires the inlined test harness (lives at src/toolkit/harness/ in the bot-starter template).
+
+> **⚠️ Safety note — in-process bot execution.** This skill describes
+> running the bot's `makeBot()` **in-process** in the test harness so
+> the harness can replay `Update` objects and capture API calls without
+> a real BotFather token. That in-process import is the whole point of
+> the harness, but it means the harness inherits whatever the imported
+> bot code can reach: the filesystem, `process.env`, the network.
+> Don't point the harness at bot code you didn't write or audit. Run
+> it in an isolated directory; don't set sensitive env vars in the
+> same shell; review `src/handlers/*` and `src/middleware/*` before
+> the first `npm test`. The verdict nonce on stdout (`GATE:<nonce>:...`,
+> §4) authenticates the result to the publisher — treat the nonce
+> like a deploy secret: don't echo it into chat, don't log it to a
+> shared channel.
 license: MIT
 ---
 
@@ -331,10 +345,10 @@ above). Example `tests/specs/T02.json`:
 ```json
 [
   {
-    "name": "T02: /balance shows the user's TON balance",
+    "name": "T02: /balance shows the user's balance",
     "steps": [
       { "send": { "text": "/balance" }, "expect": [
-        { "method": "sendMessage", "payload": { "text": "Balance: 42.5 TON" } }
+        { "method": "sendMessage", "payload": { "text": "Balance: 42.5" } }
       ] }
     ]
   }

@@ -819,7 +819,7 @@ browse, settings panels, checkout, dashboards.
 
 | Budget | Source |
 |---|---|
-| **300ms** tap-to-edit response | UX guideline (wyu-telegram.com) |
+| **300ms** tap-to-edit response | UX guideline (Telegram bot UX best-practice; see grammY UX guide) |
 | **≤ 5 rows** before iOS keyboard scrolls | Telegram client |
 | **≤ 4 columns** on Telegram Desktop | Qt 54px/button, 530px cap; `resize_keyboard` ignored |
 | **≤ 30 edits/min** globally per bot | Telegram throttling |

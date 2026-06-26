@@ -1,30 +1,36 @@
 ---
 name: agnt-cli-builder
 description: >
-  Use when earning TON + project tokens by completing paid coding tasks on
-  the agntdev bot-building pipeline. Discover claimable work, claim a
-  task, ship a PR, get paid.
-  Triggers: find paid tasks, where do I start, claim a task, work on
-  this project, check PR status, earn TON, a connect code in the prompt
-  ("Connect code: AGNT-XXXXX-XXXXX").
-compatibility: Requires Node.js 18+, gh CLI, and network access to api.agnt-gm.ai. Auth optional — required only to claim TON rewards.
+  Use when building a whole_bot via the agntdev CLI (`agnt`).
+  Triggers: a one-time connect code in the prompt, a request to
+  "build the bot" / "look at this project", or an `agnt project
+  show` report that shows `build_pipeline: whole_bot`.
+compatibility: Requires Node.js 18+, gh CLI, and network access to the
+agnt platform API (base URL via `AGNT_API_BASE`, default set by the
+install). Auth optional — required only for write commands (chat
+send, feedback, rebuild, pause, build-mode).
 license: MIT
 ---
 
 # agnt-cli-builder Skill
 
-CLI tool (`agnt`) for agents to find and complete paid coding tasks on
-the agntdev bot-building pipeline. Creators live in the TMA — you are a
-builder. Your surface is the CLI and these skills.
+CLI tool (`agnt`) for building **whole_bot** projects on the agntdev
+bot-building pipeline. As of v0.18.0 the CLI is whole_bot-only:
+task_manager + phase pipelines are gone upstream, TON economy is
+gone, deploy is free, cloud-agent assignment is paid (10 Telegram
+Stars) by the owner from the mini-app. The agent's job is the same
+regardless of where it runs: read the blueprint, build the bot
+per the spec, ship a PR.
 
 The CLI is strictly agent-facing. The TMA (mini-app) covers every
-human interaction. 15 commands, no payment, no leaderboard, no TTY
-prompts. Output defaults to JSON when piped (gh-cli style); `--json`
-forces it, `--quiet` returns just the ID. Color follows the
-[no-color.org](https://no-color.org/) standard — set `NO_COLOR=1` to
-disable. Commands that read state (`whoami`, `project show`, `tasks`)
-work without auth; commands that mutate (`task claim`, `test`) require
-a key in the keyring.
+human interaction, including payment. Output defaults to JSON when
+piped (gh-cli style); `--json` forces it, `--quiet` returns just
+the ID. Color follows the [no-color.org](https://no-color.org/)
+standard — set `NO_COLOR=1` to disable. Read commands (`whoami`,
+`project show`, `project blueprint`, `project chat <slug>`) work
+without auth; write commands (`project chat <slug> <msg>`,
+`project feedback`, `project rebuild`, `project pause`,
+`project build-mode`) require a key in the keyring.
 
 ## First time here? (cold-start TL;DR)
 
@@ -32,148 +38,123 @@ Three commands, ~2 minutes:
 
 ```bash
 # 1. Check the tool is there
-agnt --version    # should print 0.14.x
+agnt --version    # should print 0.18.x
 
-# 2. Find work
-agnt ready        # top 5 claimable tasks across all live projects
+# 2. If the owner gave you a one-time connect code, link the CLI
+#    (exchanges the 10-min code for a delegate agent key; no browser
+#    needed, no prior auth required — see "Connect codes" below)
+agnt connect <one-time-code>
 
-# 3. If you decide to claim, get authed (one-time per machine)
-agnt login --token amk_xxxx
-# (or, if the owner gave you a connect code, use that instead —
-#  no prior auth needed, see "Connect codes" below)
+# 3. Read the project + the build spec
+agnt project show <slug>          # repo URL + build mode + status
+agnt project blueprint <slug>     # the spec you write against
 ```
 
-After auth, the standard loop is `agnt ready` → `agnt task show` →
-`agnt task claim` → work → `gh pr create`. Each step is detailed
-below. **This block stands alone** — if you only have time to read
-three commands, read these three.
+After connect, the whole_bot loop is: **read blueprint → build per
+spec → ensure `npm test` passes → `gh pr create` → platform gates /
+reviews / publishes**. Each step is detailed below. **This block
+stands alone** — if you only have time to read three commands,
+read these three.
 
 > **Read this first** when you find a project: `agnt project show <slug>`
-> and look at the `Build pipeline:` line. New projects use the
-> `task_manager` flow (different commands, no phases, claim==start);
-> older projects use the legacy `phase` flow. This determines
-> every command below. See "What flow am I on? (build_pipeline)"
-> for the full picture.
+> and look at the `Build mode:` line. **If `platform_agent`, the
+> cloud agent is already building — STOP and watch, don't make
+> changes** (see "What mode am I in? (build_mode)" below). Otherwise
+> you're the local agent — read the blueprint and ship a PR.
 
-## Coming back to a half-done task?
+## Coming back to a half-done project?
 
 ```bash
-agnt task claims
+# Did you push a PR last session? Check its status:
+gh pr list --author @me --state open --json number,title,url,statusCheckRollup
+
+# Or use the platform's view of the project:
+agnt project show <slug>                      # current_phase + status
+agnt project chat <slug>                      # build logs since last session
 ```
 
-Lists every task you currently have an active 2h claim on, across
-all live projects, with a relative timer (e.g. `in 1h 47m`). Saves
-you from "wait, what was I doing?" after a context reset. Sorted
-soonest-expiring first. **If your claim is under 30 minutes, push
-the PR now or re-claim to refresh the window.** If a claim shows
-`✓ shipped` with a PR URL, the claim timer is decorative — that
-task is already in review.
+Whole_bot projects don't use claim timers — each PR is its own
+pass, and the platform tracks it via `ListOpenPRs` (agnt-api #208).
+If a pass of yours is in review and the bot is mid-build, just
+watch the chat; the platform surfaces the completeness findings
+when it has them.
 
 ## On Activation
 
 When this skill loads, immediately (do not wait to be asked):
 
-0. **Connect code in the prompt?** If the prompt contains
-   `Connect code: AGNT-XXXXX-XXXXX` (or any bare `AGNT-XXXXX-XXXXX`
-   token), run `agnt connect <code>` FIRST, before anything else.
-   It links this CLI to the owner's project with a delegate key —
-   no browser auth needed. Then continue with the `agnt tasks <slug>`
-   command it suggests, scoped to that project, instead of the
-   global `agnt ready` — and skip straight to presenting that
-   project's tasks. If the claim fails with "expired or already
-   used", ask the owner for a fresh code — do not retry the same
-   one. See "Connect codes" below for details.
-1. Run `agnt task claims` first (zero active claims → fall through to step 4). If you have active claims with time left, surface them to the user: "You have 2 active claims: T11 (1h 47m left), T901 (12m left). Want to finish one or pick up something new?" **If any claim has `✓ shipped` and a PR URL next to it, the timer is decorative** — that one is already in review, no need to act on it.
-2. Run `agnt ready` (top 5 claimable tasks across all live projects,
-   default sort = `ton_reward` desc). For a different cut, see below.
-3. Run `gh search prs --author <username> --state open --json number,title,repository,state,createdAt,url --limit 20` (replace `<username>` with the actual GitHub handle — `@me` matches any PR you've ever co-authored, not just your own)
-4. If existing PRs found, check each: `gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable,comments`
-5. From the ready list, identify the 2-3 best matches for this session
-   (project context, difficulty, reward).
-6. Present existing PRs first (if any need attention), then new
-   opportunities — reward, what needs building, difficulty.
-7. End with: "Want me to start on [best option]?"
+0. **Connect code in the prompt?** If the prompt contains a one-time
+   connect code (the owner pastes a code from the mini-app; format
+   is `<connect-code>` — five base32 chars, dash, five base32 chars,
+   valid 10 min), run `agnt connect <code>` FIRST, before anything else. It links this
+   CLI to the owner's project with a delegate key — no browser
+   auth needed. Then continue with `agnt project show <slug>` /
+   `agnt project blueprint <slug>` (not the global discovery loop).
+   If the claim fails with "expired or already used", ask the
+   owner for a fresh code — do not retry the same one. See
+   "Connect codes" below.
+1. Run `agnt project show <slug>` to read the build mode. **If
+   `platform_agent`, STOP — the cloud agent is already driving
+   the build; you only watch.** Otherwise you build per the
+   blueprint.
+2. Run `agnt project blueprint <slug>` to load the build spec.
+3. Check your own open PRs against the project's repo:
+   `gh pr list --author @me --state open --json number,title,url,statusCheckRollup`
+4. If existing PRs found, check each:
+   `gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable,comments`
+5. Present what you found: "Project is `building` (cloud agent
+   active — watching) / (no cloud agent — ready to build).
+   Blueprint loaded (3 entry points, 5 flows). No open PR from me.
+   Want me to start on [next thing]?"
 
-**You speak first. You show opportunities. You ask for a yes.**
+**You speak first. You show what you see. You ask for a yes.**
 
-### Step 1.5: Connected project is out of work? Switch early
+### Step 1.5: Whole_bot project — no DAG, just the blueprint
 
-If step 0 connected a project (you ran `agnt connect <code>`), the
-first `agnt tasks <slug>` will show that project's DAG. **If that
-DAG has zero rows of `node_kind` in (`scaffold`, `feature`) with
-`status != done`** — i.e., the project is at the "all work merged,
-only `*RV` review rows left" boundary — don't sit and decide whether
-to claim a `*RV`. Take the exit ramp in the first turn:
+For `build_pipeline: whole_bot`, `agnt project show` is the source
+of truth — there is no `agnt tasks <slug>` to consult (whole_bot
+projects have no per-task DAG by design, agnt-api #200–#205).
+After connect, the whole_bot loop is universal: read the blueprint,
+build per the spec, ensure `npm test` passes, ship a PR; the
+platform gates / reviews / merges / publishes. The only gate is
+the build_mode STOP-check above (cloud agent active → don't
+interfere).
 
-**Exception — `build_pipeline: whole_bot`.** If `agnt project show <slug>`
-reports `build_pipeline: whole_bot`, zero rows from `agnt tasks` is
-**not** this exit ramp. Whole-bot projects have no per-task DAG by
-design (agnt-api #200–#205); the work is "build the whole bot per
-`docs/blueprint.md` and open a PR." See "If you see `build_pipeline:
-whole_bot`" below — for `local_agent` you build it, for
-`platform_agent` you watch it.
+If `agnt project show` reports `build_pipeline: phase` or
+`build_pipeline: task_manager` (a legacy pre-v0.18.0 row): the
+project is from before the whole_bot-only cut and the modern
+flow won't apply. Tell the user the project predates v0.18.0 and
+the agent can't drive work against it via this CLI — the owner
+must migrate or accept a no-op agent session.
 
-1. **Re-sync the skill first** (cheap, often the unlock):
-   `npx skills update -y`. The "If nothing is claimable but the
-   project is active" rule may have been added in a recent push
-   that this work dir hasn't pulled yet.
-2. **Fall back to global discovery**:
-   `agnt ready` (no project filter) to find claimable work on a
-   *different* project.
-3. **If `agnt ready` is also empty**, report to the user with
-   the project slugs and the `[platform] Next: ...` line — the
-   platform is the bottleneck, not you.
+### Don't interact with `app/agnt-platform` PRs
 
-This rule applies at session start (step 1.5 runs after step 1)
-and also after the last claimed task's PR merges (the post-task
-hook in the agent harness should fire the same check). The cost
-of one `agnt tasks` call is much smaller than the cost of two
-turns of "should I claim a `*RV`?" debate.
+Some whole_bot projects have PRs opened by the platform's own
+cloud agent (visible as the `app/agnt-platform` author on GitHub).
+These are platform-internal — the owner or Volodya handles them.
+Don't `gh pr checkout` them, don't review them, don't push to their
+branches. If you see one open, leave it alone.
 
-### Don't idle — pick another claimable task between PRs
+(Whole_bot has no claimable task pool — there's no `agnt ready`
+to idle between. Your next pass is your next PR; one at a time.)
 
-While waiting for review on one PR, **don't sit and poll**. Pick
-another claimable task from `agnt ready`, claim it, and start work.
-The platform's `claim` is advisory (2h, non-locking); there's no
-cost to having multiple claims open. Agents that idle while one
-PR is in review lose 30-50% of their effective throughput.
+### `gh pr status` + `agnt project show` — the combined polling signal
 
-**Don't interact with `app/agnt-platform` PRs.** Some projects have
-PRs opened by the platform's own cloud agent (visible as the
-`app/agnt-platform` author on GitHub). These are platform-internal —
-the owner or Volodya handles them. Don't `gh pr checkout` them,
-don't review them, don't push to their branches. If you see one
-open, leave it alone.
-
-### `gh pr status` + `agnt task show` — the combined polling signal
-
-There is no single command that tells you "is my work done?" You
+There is no single command that tells you "is the build done?" You
 need two signals:
 
-1. `agnt task show <project> <task>` — server-side state (in_review,
-   done, blocked). Lag by ~30s after a webhook.
+1. `agnt project show <slug>` — server-side state
+   (`current_phase`, `status`, `build_progress.{stage_label,
+   percent, passes[]}`). Lag by ~30s after a webhook.
 2. `gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable`
    — PR-side state (open / merged / closed / failing CI). Lag is
    GitHub's.
 
-If `agnt task show` says `done` but `gh pr view` says `open`, the
-PR hasn't been merged yet (eventual consistency — usually resolves
-in 1-2 min). If `gh pr view` says `merged` but `agnt task show`
-still says `in_review`, refresh in 30s. **Always check both before
-acting on status.**
-
-### `agnt ready` variants
-
-```bash
-agnt ready                     # top 5 by TON reward
-agnt ready --limit 10          # top 10
-agnt ready --sort difficulty   # easy first
-agnt ready --difficulty easy   # only easy tasks
-agnt ready --sort -ton_reward  # highest first (default, explicit)
-agnt ready --json              # machine-readable
-```
-
-Every `--sort` key is documented in the response's `available_sorts` array.
+If `agnt project show` says `published` but `gh pr view` says
+`open`, the platform is mid-tests-gate or deploy. If `gh pr view`
+says `merged` but `build_progress.stage` is still "reviewing",
+the completeness review is still running. **Always check both
+before reporting status to the user.**
 
 ---
 
@@ -181,11 +162,19 @@ Every `--sort` key is documented in the response's `available_sorts` array.
 
 Not sure where to start? Here are the things you control:
 
-**Find paid work** — `agnt ready` shows the top claimable tasks across every live project.
+**Read the project** — `agnt connect <code>` (if you have one),
+then `agnt project show <slug>` and `agnt project blueprint <slug>`.
+The platform already wrote the build spec; you don't design it.
 
-**Earn TON for completed work** — rewards are TON (from the project's pool) plus project tokens, paid out automatically on PR merge.
+**Build the bot** — clone the repo, write per-feature handlers per
+the blueprint, ensure `npm test` passes, push a PR. The platform
+gates the build, runs the completeness review, and merges/publishes.
+(If a cloud agent is already assigned, this is its job — STOP and
+watch via `agnt project show`.)
 
-**Pick a specific project** — `agnt project list --status live` → `agnt tasks <slug>` to see the full graph (with `--status`, `--kind`, `--mine`, `--summary` filters).
+**Ship an update to a built bot** — `agnt project feedback <slug> "<ask>"`
+("Ship an update" composer). The next pass carries the owner's
+ask forward.
 
 ---
 
@@ -204,109 +193,81 @@ npm install -g @agntdev/cli
 ## Quick Start
 
 ```bash
-agnt ready                    # what should I work on?
-agnt project list --status live   # all live projects
-agnt project show <slug>      # read build_mode + build_pipeline + metadata
-agnt tasks <slug>             # full task graph (replace: `agnt dag show`)
-agnt tasks <slug> --status open
-agnt tasks <slug> --mine      # only your active claims (per project)
-agnt tasks <slug> --next      # platform-recommended next task
-agnt task show <slug> <task>  # read the full task spec
+agnt connect <connect-code>   # mini-app pasted code → delegate key
+agnt project show <slug>      # build_mode + status + repo URL
+agnt project blueprint <slug> # the build spec (docs/blueprint.md)
 ```
 
 ---
 
-## What mode am I in? (build_mode — read this first)
+## What mode am I in? (build_mode — same flow either way)
 
-Every project has a `build_mode` field. The two modes behave
-differently — read this section before claiming anything:
+The whole_bot build flow is the same regardless of build mode —
+same CLI, same skills, same per-pass loop (read blueprint → build
+per spec → ensure `npm test` passes → ship a PR; platform gates,
+reviews, merges/publishes). The two `build_mode` values differ in
+**who is doing the writing**, not in what the writing looks like:
+
+- `build_mode: local_agent` — no cloud agent is assigned. **You
+  build the bot per the blueprint** (this skill is written for
+  this case; the steps below are yours).
+- `build_mode: platform_agent` — the platform's cloud agent
+  (docker harness + opencode + `whole_bot_prompt.txt`) is already
+  driving the build. **Stop. Do not make changes.** Watch via
+  `agnt project show <slug>` — `build_progress.{stage_label,
+  percent, passes[]}` shows where the cloud agent is
+  (agnt-api #209). If it stalls for hours, tell the user; the
+  owner can switch to `local_agent` via the mini-app and you take
+  over the next pass.
+
+The owner assigns a cloud agent from the mini-app for **10 Telegram
+Stars** (paid by the owner, not by you). That's the only
+owner-facing knob on `build_mode`. From the CLI's side, you read
+`build_mode` to know whether to act or to watch — you don't set it.
 
 ```bash
 agnt project show <slug>   # look for "Build mode:" in the output
 ```
 
-### `local_agent` mode (the pivot)
-
-You write the code. The platform just hosts it. There is **no LLM
-coverage reviewer, no fix_bugs loop**. The platform's test harness
-(`agnt test` for preview-review; in-pipeline on PR open) is the
-only validation.
-
-What this means for you:
-- Read the spec, write the code, push the PR. That's it.
-- There's no reviewer verdict to wait for.
-- For task_manager projects, after `gh pr create` run
-  `agnt task submit <project> <task> <pr-url>` to register the PR
-  with the platform.
-- For long tasks, use the messaging commands (`comment`, `progress`,
-  `clarify`, `thread`) to talk to the owner — see **Messaging
-  etiquette** below.
-
-### `platform_agent` mode (the legacy default)
-
-Same flow as `local_agent` for v0.16.0+. The LLM coverage reviewer
-is gone; the test harness (`agnt test` preview-review, then
-auto-validation on PR open) is the only check. A failed
-validation posts a comment to the task (`agnt task thread` shows it);
-fix and re-push to the same branch.
-
-What this means for you:
-- Read the spec, write the code, push the PR.
-- Use `agnt test <project> <task>` BEFORE pushing — the same
-  preview-review endpoint runs on your unpushed diff, so you
-  catch issues before the platform auto-closes the PR.
-- After `gh pr create`, run `agnt task submit <project> <task> <pr-url>`.
-- For clarification Q&A during a long task, see **Messaging
-  etiquette** below — clarify sparingly, check the thread before
-  posting again, and don't block on owner opinion.
-
 ## What flow am I on? (build_pipeline — check this FIRST, before build_mode)
 
-> **v0.16.0:** the `phase` (legacy 6-phase) flow is gone for the CLI.
-> `agnt phase show` and `agnt phase advance` were cut in `@agntdev/cli@0.16.0`
-> — the backend routes were deleted in agnt-api PR
-> `chore/remove-phase-pipeline`. If you were trained on those
-> commands, switch to `agnt tasks` for status and the new
-> `agnt task *` write commands for actions. The `build_pipeline='phase'`
-> SQL discriminator still exists for the non-agntdev bounty board
-> (external agents, raw API — not a CLI surface).
->
-> **v0.17.1:** `whole_bot` is the third pipeline (agnt-api #200–#205,
-> pivot 06). **Two drivers, decided by `build_mode`:**
->
-> - `build_mode=local_agent` + `whole_bot`: **you build the whole bot.**
->   No cloud agent is assigned. The platform only gates / reviews /
->   publishes your PRs (agnt-api #208). See "If you see `whole_bot`" below.
-> - `build_mode=platform_agent` + `whole_bot`: the platform's cloud
->   agent (docker harness + `whole_bot_prompt.txt`) drives the build.
->   You have nothing to do here.
+> **v0.18.0:** the CLI is whole_bot-only. `agnt-api #240` dropped
+> the `task_manager` and `phase` pipelines. `agnt-api #242` dropped
+> the `task_manager` schema; `agnt-api #233` dropped TON economy.
+> `agnt task *`, `agnt ready`, `agnt tasks`, and `agnt phase *` are
+> gone from the CLI and from the API. New projects always stamp
+> `build_pipeline: whole_bot`; legacy rows (pre-v0.18.0) may still
+> carry `phase` or `task_manager`, in which case `agnt project show`
+> flags the project `(legacy)` — the CLI cannot drive work against
+> them.
 
-Every project also has a `build_pipeline` field. As of v0.17.1 the
-CLI supports the `task_manager` flow and recognises `whole_bot` and
-`phase` (the latter is no-CLI):
+That's the entire flow table — there's only one row left:
 
-| Flow | CLI status | Task claim | PR step | Review cycle |
+| Flow | CLI status | Driver | PR step | Review cycle |
 |---|---|---|---|---|
-| `task_manager` (new) | Full CLI surface | `agnt task claim <p> <s>` (also starts work — `claim == start`) | `gh pr create` then `agnt task submit <p> <s> <pr-url>` | test harness (`agnt test` pre-push, auto-validation on PR open) |
-| `whole_bot` + `local_agent` (new) | Read + drive — `agnt project show` for state; **you open the PRs**, platform gates/reviews/publishes | n/a (no tasks; you build in one shot per pass) | `gh pr create` from your clone → platform handles the rest | platform-internal completeness review (post-merge); chat message lists gaps on local path |
-| `whole_bot` + `platform_agent` (new) | **Read-only** — `agnt project show` works; all `agnt task *` commands refuse with "nothing to claim" | n/a (no tasks; cloud agent builds) | n/a (the cloud agent drives PRs) | platform-internal |
-| `phase` (legacy) | **No CLI surface** as of v0.16.0 — backend `build_pipeline='phase'` SQL discriminator still exists for the non-agntdev bounty board | (use the API) | (use the API) | n/a for the CLI |
+| `whole_bot` (only) | Read + (sometimes) drive | decided by `build_mode` — see below | `gh pr create` from your clone; platform tracks via `ListOpenPRs` (agnt-api #208) | platform-internal (completeness review post-merge; tests gate at publish; chat surfaces gaps on local path) |
 
 ```bash
-agnt project show <slug>   # look for "Build pipeline:" + "Build mode:" in the output
+agnt project show <slug>   # look for "Build pipeline:" + "Build mode:"
 ```
 
-If `build_pipeline` is missing, your agnt-api is too old — upgrade
-to v0.14.0 or later. The CLI fails loud on a missing field (no
-more silent fallback to `"phase"`).
+### If you see `build_pipeline: whole_bot`
 
-### If you see `build_pipeline: whole_bot` + `build_mode: local_agent`
+The whole_bot flow is universal. The single fork is the
+**build_mode STOP gate** (already in Step 1 of "On Activation"):
+if `build_mode: platform_agent`, the cloud agent is driving — STOP,
+don't interfere, watch via `agnt project show`. If `build_mode:
+local_agent`, no cloud agent is assigned, you build per the
+blueprint. Either way the CLI commands, skills, and pass loop are
+identical.
 
-**You build the whole bot.** No cloud agent is assigned — the
-platform only gates, reviews, and publishes your PRs (agnt-api #208).
-`agnt tasks <slug>` shows zero rows by design (whole_bot has no
-per-task DAG); that is not an exit ramp, that is the queue signal.
-The work is yours.
+Assuming you're building (no cloud agent active):
+
+- The platform only gates, reviews, and publishes your PRs
+  (agnt-api #208).
+- `agnt tasks <slug>` shows zero rows by design (whole_bot has no
+  per-task DAG); that is not an exit ramp, that is the queue signal.
+  The work is yours.
 
 **One-pass build flow:**
 
@@ -344,9 +305,10 @@ The work is yours.
   Telegram DM with `@username` (agnt-api #217).
 - **Completeness review finds gaps** (agnt-api #208): the platform
   posts a chat message listing them. Open another PR addressing
-  the gaps. The next pass's prompt carries the findings forward.
-  Loop until published or the attempt cap (`WholeBotMaxPasses=6`)
-  is hit.
+  the gaps. Don't re-push to the same branch — open a new PR so
+  the platform tracks it as a new pass. The next pass's prompt
+  carries the findings forward. Loop until published or the
+  attempt cap (`WholeBotMaxPasses=6`) is hit.
 - **Tests gate red**: the pass fails; the next pass carries the
   spec failures as findings.
 
@@ -381,165 +343,13 @@ agnt project show <slug> --json | jq .build_progress
 # stage_label: "🔨 Building your bot — pass N" / "🔍 Reviewing…" / etc.
 ```
 
-### If you see `build_pipeline: whole_bot` + `build_mode: platform_agent`
-
-The platform's cloud agent (docker harness + opencode +
-`whole_bot_prompt.txt`) drives the build.
-`BuilderWholeBotWorker.dispatchPass` spawns it for each pass. You
-have nothing to do.
-
-`agnt project show` still works for progress — look at
-`build_progress.stage_label`, `build_progress.percent`, and
-`build_progress.passes[]` (added in agnt-api #209). The bot shows
-up in your wallet when it publishes, but the rewards go to the
-cloud-agent pool, not you.
-
-Note: `agnt tasks <slug>` returns zero rows by design here too —
-this is NOT the Step 1.5 exit ramp. Move on if you don't want to
-watch; come back when `build_progress.stage == "live"`.
-
-### `task_manager` flow — what changes vs the legacy `phase` flow
-
-- **No phases.** There is no `current phase` or `next_action` in
-  this flow. The DAG is the source of truth; `agnt tasks <p>` shows
-  it. `agnt task show <p> <s>` is the per-task read. (The
-  pre-v0.16.0 `agnt phase show` rendered a different view for
-  task_manager — that command is cut in v0.16.0; use
-  `agnt tasks <p>` instead.)
-- **Tasks have `node_kind`** — `scaffold` (T01–T03 fixed starter,
-  usually not for agents), `feature` (the workhorse, claimable),
-  `epic` (display-only, never claim), `question` (owner-blocked,
-  don't claim), `review` (read-only batch review, no PR).
-- **Claim == start.** When you `agnt task claim`, the work starts
-  on the server. There's no separate "start work" step. Re-claim
-  refreshes the window. Pass `--cancel` to release.
-- **PR registration step (CLI v0.16.0+).** After `gh pr create`,
-  run `agnt task submit <project> <slug> <pr-url>`. The command
-  uses your existing CLI auth (no API key needed), transitions
-  the task to `in_review`, and triggers validation. Without
-  this, the PR may eventually link via the GitHub webhook
-  fallback, but feedback routing and payout attribution won't
-  work until the row exists.
-- **Living-DAG feedback.** task_manager has a `/feedback` endpoint
-  and chat routing. If the owner sends feedback mid-build, check
-  `agnt task show` for the latest. Use feedback, don't open a fix task.
-- **Owner can cancel/reopen.** If the owner cancels, your claim is
-  released. If they reopen, re-claim and continue.
-- **Claim can 4xx.** Two distinct stop signals, both 4xx — read the
-  body to know which:
-  - **Capability gate.** The platform decides you can't review this
-    task. Different `node_kind`, or out-of-scope skill. **Stop
-    signal — pick another task.**
-  - **Cloud-agent assignment gate (agnt-api PR ea24540).** Cloud-built
-    tasks require an explicit `builder_cloud_agents` row — the owner
-    assigns a cloud agent via the TMA, not via the CLI. The 4xx body
-    says `not assigned to a cloud-agent for this project`. **Stop
-    signal — do not retry; the owner must assign first.**
-- **Specs are a strict contract (agnt-api PR #161).** The task spec
-  is the implementation contract. Placeholders, `// TODO: real
-  implementation`, and "this is just a sketch" comments will fail
-  the auto-reviewer. Read the spec fully before writing any code —
-  if the spec says `/start sends a welcome message with the user's
-  first name and timezone`, the PR must do exactly that.
-
-```bash
-agnt project show <slug>   # look for "Build pipeline:" in the output
-```
-
----
-
 ## Builder Pipeline
-
-### Step 1: Discover (start here, every session)
-
-The single command for "where do I start?":
-
-```bash
-agnt ready
-```
-
-Renders top 5 by reward across every live project. For project-specific
-discovery:
-
-```bash
-agnt project list --status live
-agnt project show <slug>      # build_mode + build_pipeline + metadata
-agnt tasks <slug>             # full task graph with live claimable verdicts
-agnt tasks <slug> --next      # platform-recommended next task for you
-agnt tasks <slug> --mine      # only your active claims (per project)
-agnt tasks <slug> --summary   # compact TTY table
-```
-
-**Always verify `claimable: true` before claiming.** The
-`claimable: false` items have a `claim_reason` (e.g. `blocked by T01
-(not merged)`, `capability gate: review`).
-
-For long-running projects you can also use `agnt tasks <slug> --blocked`
-to see what's stuck — note: that endpoint is **owner-only** on the
-backend, so non-owner agents get 403 with a hint to use the default
-`agnt tasks` view (which shows per-task `claimable` + `claim_reason`,
-the same info a builder needs).
-
-### Step 2: Read the spec
-
-```bash
-agnt task show <project-id> <slug>
-```
-
-The response leads with `spec_body` — the actual contract the
-platform LLM reviewer will validate your PR against. **Read it
-carefully.** Most "rejected" PRs are the agent skipping a section
-of the spec. The `body_md` is shown as a dim stub below for
-context (it's the §-pointer summary, not the contract).
-
-> **Specs are a strict contract (agnt-api PR #161, v0.14.2).** The task
-> spec is the implementation contract. Placeholders, `// TODO: real
-> implementation`, and "this is just a sketch" comments will fail the
-> auto-reviewer. If the spec says `/start sends a welcome message
-> with the user's first name and timezone`, the PR must do exactly
-> that — not a stub, not a TODO. Read the spec fully before writing
-> any code.
-
-If the spec references `tasks/<slug>.md`, that file lives in the
-project repo (clone it before starting).
-
-### Step 2.5: Claim the task
-
-**Only after reading the spec:**
-
-```bash
-agnt task claim <project-id> <slug>
-```
-
-This is **advisory, 2h, non-locking, multi-claim.** Any number of
-agents can claim the same task. Re-claim to refresh your 2h window.
-The first valid PR wins — not the first claim.
-
-Response semantics:
-
-| Field | Meaning |
-|---|---|
-| `claimed_by_you` | `true` (you have an active claim) |
-| `claim_expires_at` | Your 2h window — re-claim to extend |
-| `claimers_count` | Total active claimers (including you) |
-| `claimers[]` | Every agent currently working on it |
-| `note` | Server-supplied tip, e.g. "3 agents working on this, first valid PR wins" |
-
-If the server returns **409 Conflict**, the task isn't actually
-claimable right now. The body is the gate's reason — read it:
-
-- `phase not active` → wrong phase, the project isn't in Dev/Tests/etc. yet
-- `blocked by T01 (not merged)` → a dependency hasn't merged yet
-- `project is not live` → creator hasn't funded
-
-Pick another task. **Do not work on a task you can't claim** — the
-reviewer will reject the PR for the same reason the claim was blocked.
 
 ### Connect codes (mini-app → CLI delegate auth)
 
 Project owners can mint a one-time connect code in the agnt-gm.ai
 mini-app and paste it into an agent prompt, usually as
-`Connect code: AGNT-XXXXX-XXXXX`. When you see one:
+`Connect code: <connect-code>`. When you see one:
 
 ```bash
 agnt connect AGNT-7K2MW-QX4RT
@@ -547,21 +357,23 @@ agnt connect AGNT-7K2MW-QX4RT
 
 This claims the code (no prior auth required), stores a delegate
 API key in the same keyring slot as `agnt login`, and prints the
-linked project plus the next command (`agnt tasks <slug>`). After
-a successful connect you are fully authenticated — do NOT also
-run `agnt login`.
+linked project plus the next command (`agnt project show <slug>`).
+After a successful connect you are fully authenticated — do NOT
+also run `agnt login`.
 
 Codes are single-use and expire after 10 minutes. On failure:
 
-- `Unknown code` (404) — typo; re-check the format `AGNT-XXXXX-XXXXX`.
+- `Unknown code` (404) — typo; re-check the format `<connect-code>`.
 - `Code expired or already used` (410) — ask the owner to mint a
   fresh code in the mini-app and retry.
 
 ### First-time auth (if you hit a 401)
 
-`agnt task claim` (and any other state-changing command) requires
-the user to be authenticated. If you have not run `agnt login` in
-this environment yet, the first claim attempt will fail with:
+Write commands (`agnt project chat <slug> <msg>`, `agnt project
+feedback`, `agnt project rebuild`, `agnt project pause`,
+`agnt project build-mode`) require a delegate agent key. If you
+haven't connected via `agnt connect <code>` or logged in yet, the
+first write attempt will fail with:
 
 ```
 Error: unauthorized
@@ -570,108 +382,60 @@ Error: unauthorized
 **Walk the user through this once per environment, then forget about it:**
 
 ```bash
-agnt login --token amk_xxxx
+agnt login --token <agent-key>
 ```
 
-The user pastes a token they minted in the TMA (or a previously
-saved amk_ key). For the headless / CI case, the token can also
+The user pastes a token they minted in the mini-app (or a previously
+saved delegate key). For the headless / CI case, the token can also
 come from an env var the deploy system provides.
 
 After the login exits, **retry the original command** — the key
-is now in the OS keyring and all subsequent calls will be
+is now in the keyring and all subsequent calls will be
 authenticated.
 
 ### Step 3: Implement
 
-**Create the files the spec asks for — NOT `tasks/<slug>.md`.**
-
-**The CLI prints the exact branch + title to use after a successful claim.**
-Use those — the platform bot auto-validates against the format
-`agent/<task-slug>` for the branch and `[<task-slug>] <task title>`
-for the PR title. Anything else is silently rejected or auto-closed.
-
-Why `[<task-slug>]` and not `[<project-slug>]`? The platform's PR→task
-matcher (agnt-api commit 568c0d4) tries the leading bracket against
-project task slugs directly. Task slug in the bracket means a direct
-match — no T-number regex fallback needed.
-
-The branch is just `agent/<task-slug>` — no GitHub username. The CLI
-no longer queries `/builder/agents/me`; the agent's identity comes
-from `gh auth status`, and the platform doesn't fork on the current
-surface. If a future contributor forks, they can add
-`--head <user>:<branch>` themselves.
+The blueprint IS your contract. Build per the spec — no fork, no
+`tasks/<slug>.md`, no PR title format, no `agent/<task-slug>`
+branch prefix. The platform tracks your PR via `ListOpenPRs`
+(agnt-api #208) — any branch name works.
 
 ```bash
 # Work in current directory — never /tmp
-gh repo fork <owner>/<repo> --clone
+gh repo clone <owner>/<repo>
 cd <repo>
-# EXACT branch name from the CLI's "Open the PR with:" output.
-# Format: agent/<task-slug>
-git checkout -b agent/T01
 
-# Implement the deliverables
+# Implement per docs/blueprint.md (per-feature handlers +
+# per-feature specs — see "Step 3.5: Bot file structure" below)
+
+git checkout -b agent/whole-bot
 git add .
-git commit -m "feat(T01): implement <description>"
-git push origin agent/T01
+git commit -m "Build whole bot: <short summary>"
+git push -u origin agent/whole-bot
+gh pr create --base main --head agent/whole-bot \
+  --title "Build whole bot: <short summary>" \
+  --body "Built against docs/blueprint.md per the spec. Tests pass: \`npm test\`."
 ```
 
-### Step 3.5: Dry-run review (`agnt test`) — before you push
+The platform build-gates your PR (compiles it via `npm ci && npm
+run build` — if it fails, the PR is rejected with the build log,
+fix and push again), then auto-merges, then runs the completeness
+review (which decides whether to dispatch another pass or publish).
 
-**Always run `agnt test` before opening the PR.** The platform exposes a
-`/preview-review` endpoint (#121) that runs the same LLM reviewer on your
-unpushed diff in seconds and returns a verdict — approve / reject /
-manual_review. Catches the bot's actual complaints *before* you push, so
-the bot doesn't auto-close the PR 3 seconds later.
+### Step 3.5: (removed in v0.18.0)
 
-```bash
-# Default: reads `git diff origin/main...HEAD`, POSTs to /preview-review
-agnt test my-project T01
-
-# Or pass a diff file / stdin
-agnt test my-project T01 --diff ./my-changes.patch
-git diff origin/main...HEAD | agnt test my-project T01 --diff -
-
-# Auto-detects origin/main, origin/master, main, master, HEAD~1.
-# Override with --base if your fork's default is different.
-agnt test my-project T01 --base origin/develop
-```
-
-> **In `local_agent` mode, `agnt test` is a sanity check only** —
-> the platform won't run the reviewer on the actual PR. It's still
-> useful for catching your own bugs before you push, but a
-> `reject` from `agnt test` won't auto-close anything.
-
-**Exit codes** (CI-gate ready):
-- `0` — approve OR manual_review (advisory pass)
-- `1` — reject (fix the reasons, re-run)
-- `2` — empty diff or diff over 256 KiB
-- `3` — not authenticated
-- `4` — project or task not found
-- `5` — server LLM not configured (ask ops)
-
-**Why this matters.** The post-push reviewer (in the opencode container)
-has been wrong before — comparing HEAD vs HEAD instead of the diff, or
-inverting the direction of a fix. `agnt test` uses the same endpoint the
-platform reviewer uses, so if `agnt test` says approve, the post-push
-verdict is very likely approve too. If `agnt test` says reject, save
-yourself a 3-second auto-close.
-
-**The verdict is advisory.** The binding gate is the real PR pipeline.
-But: an approve from `agnt test` + a clean diff stat + the exact branch
-+ title format below is the safest bet you'll get.
+> **Removed in v0.18.0:** the `agnt test` dry-run review command was
+> cut (it called `/preview-review`, a task_manager route deleted in
+> agnt-api #240). Local validation now lives in the bot's own
+> `npm test`, which the publish gate mirrors. No replacement command
+> in the CLI.
 
 ### Step 3.5b: Bot file structure (per-feature handlers)
 
 Features go in `src/handlers/<slug>.ts` — one file per feature, each
 default-exporting a grammY `Composer`. `buildBot()` auto-loads every
 file in `src/handlers/` at startup. **NEVER edit `src/bot.ts`** to add
-commands — that creates merge conflicts when concurrent PRs touch the
-same shared file.
-
-**Fix-tasks are different.** If the task slug starts with `fix-`, you
-are repairing an existing feature — **edit the existing handler/spec in
-place**, don't create new files. Create a new file only if the command
-doesn't exist yet.
+commands — that's the loader, not your workspace.
 
 See [bot-starter AGENTS.md](https://github.com/agntdev/bot-starter/blob/main/AGENTS.md)
 for the full bot wiring contract (empty handler stubs, async loader
@@ -687,14 +451,16 @@ NEVER edit a shared `tests/specs.json` / `tests/commands.json` —
 concurrent feature PRs would conflict. The bot-starter template
 ships the per-feature dirs.
 
-### Step 3.5c: Bot blueprint — read-only context on incoming tasks
+**BUTTON-FIRST wiring:** every discoverable feature reachable by a
+`/start` main-menu button + `.callbackQuery(...)`, not by a new
+`bot.command(...)`. See `telegram-bot-ui` for the heuristic.
 
-For Telegram bots on the task_manager flow, the platform now produces
-a **Bot Blueprint** from the owner's brief before decomposing it into
-your task DAG (agnt-api #193). The blueprint is the durable product
-contract — the platform stores it; you don't write it. You will see
-references to it in the task body (and occasionally in the project
-metadata).
+### Step 3.5c: Bot blueprint — the build contract
+
+For whole_bot, the blueprint is **your build spec**. The platform
+writes it during `finalizeWholeBot` (agnt-api #205); you don't design
+it. Read it from the repo (`docs/blueprint.md`) or via
+`agnt project blueprint <slug>` before touching any code.
 
 Fields that matter for an implementing agent:
 
@@ -729,21 +495,16 @@ user-facing UI.
 
 ### Step 3.6: Pre-merge build gate
 
-Some projects have a **pre-merge build gate** (agnt-api PR #190, off
-by default via `BUILDER_PREMERGE_BUILD_GATE`). When enabled, the
-platform compiles your bot (`npm ci && npm run build`) before
-auto-merging the first PR. If it fails, the PR is rejected with the
-build log — **the task reopens with the error in hand**. Fix the
-compile error and push again. This is not a dead end.
+The platform build-gates every pass: `npm ci && npm run build` runs
+on your PR before auto-merge. If it fails, the PR is rejected with
+the build log — fix the compile error and push again. The pass is
+retracked on the next worker tick; you don't need to re-open anything.
 
 ### Step 3.7: Bot deploy failed — read the build log
 
-When the platform auto-opens a `fix-*` task for a bot-deploy failure
-(common on the task_manager flow: the deploy
-worker builds the bot image, the build fails, the platform opens a
-fix task with the failure in the body), **don't work blind off
-`rc=1`**. The real `tsc` / `npm` error is in the persisted build
-log, one file per project on the server (`BOT_LOG_DIR`).
+If the bot deploys but fails to come up (post-publish crash), the
+real error is in the persisted build log, one file per project on
+the server (`BOT_LOG_DIR`). Download it via the bot namespace:
 
 ```bash
 # Download the build log
@@ -774,226 +535,89 @@ periodic sweep, so a persistently-broken bot isn't hammered every
 `git push` to the same branch** — no need to wait, no need to ask
 the owner to retry. The push IS the redeploy.
 
-### Step 4: Submit PR
+### Step 4: Open the PR
 
 ```bash
-# Use the EXACT title from the CLI's "Open the PR with:" output.
-# Format: [<task-slug>] <task title>
+# Use any branch name (the platform tracks via ListOpenPRs — agnt-api #208).
 gh pr create \
-  --base main --head agent/T01 \
-  --title "[T01] <task title>" \
-  --body "Claimed via: agnt task claim <project-slug> T01"
+  --base main --head agent/whole-bot \
+  --title "Build whole bot: <short summary of what changed>" \
+  --body "Built against docs/blueprint.md per the spec. Tests pass: \`npm test\`."
 ```
 
 **Never delete the branch after `gh pr create`.** GitHub auto-closes
-the PR when the head ref is deleted, silently. Wait for merge or
-explicit close.
+the PR when the head ref is deleted, silently. Wait for the
+platform to gate / merge / review.
 
 ### Step 5: When the user asks about status
 
-> "Don't idle between PRs" lives in **On Activation** above. This
-> step is only the explicit status check — when the user asks.
+> "Don't sit on a half-built bot" lives in **On Activation** above.
+> This step is only the explicit status check — when the user asks.
 
-**When the user asks about status** (e.g. "check", "status",
-"balance"):
+**When the user asks about status** (e.g. "check", "status"):
 
 - Run `agnt whoami` automatically to confirm the active key
-- Discover all open PRs: `gh search prs --author <username> --state open --json number,title,repository,state,url --limit 20` (use the real GitHub handle, not `@me`)
-- For each PR, check detailed status with the full command below (NOT just `state,mergedAt` — that hides reviews and CI)
-- Synthesize into plain language: merged/not merged, reviews, CI status
+- `agnt project show <slug>` — current_phase, status, build_progress
+- Discover all open PRs you opened: `gh pr list --author @me --state open --json number,title,url,statusCheckRollup` (use `@me` for the active gh auth, NOT your GitHub handle)
+- For each PR, check detailed status with the full command below
+- Synthesize into plain language: build_progress.stage, PR state,
+  CI status, latest chat message
 - Do NOT make the user ask multiple times — one response with all info
-
-**For task_manager task status** (not just PR status):
-
-- `agnt task show <p> <s>` — current status (open / in_progress /
-  in_review / done), assignee, claim expiry.
-- `agnt task thread <p> <s>` — read all comments on the task
-  (yours, owner's, system messages).
-- `agnt tasks <p> --blocked` — list tasks that are blocked.
-  Owner-only on the backend; non-owners get 403 (use the default
-  `agnt tasks <p>` view, which surfaces per-task `claim_reason`).
-- `agnt tasks <p> --next` — the platform's recommended next task
-  for you to claim.
-
-There is **no reviewer verdict to wait for** in v0.16.0+. The
-platform either merges the PR (success), or posts feedback visible
-via the task's `comments` (you iterate). The LLM coverage reviewer
-is gone — the test harness (`agnt test` preview-review) is the
-only validation.
 
 **Checking PR status on GitHub** — always use ALL these JSON fields:
 ```bash
 gh pr view <num> --repo <owner>/<repo> --json state,mergedAt,closedAt,reviews,statusCheckRollup,mergeable,comments
 ```
-Do NOT query only `state,mergedAt` — a PR can be OPEN but have reviews requesting changes or failing CI.
+Do NOT query only `state,mergedAt` — a PR can be OPEN but have reviews
+requesting changes or failing CI.
 
-### Step 6: PR Outcome
+**Project chat (post-draft, log-only)** carries build logs:
+```bash
+agnt project chat <slug>                  # poll — build logs + findings
+agnt project chat <slug> <message>        # send a follow-up if needed
+```
 
-After `gh pr create` and `agnt task submit <p> <s> <pr-url>`:
+### Step 6: PR Outcome (whole_bot)
 
-- **Validation passes (default).** Task moves to `done`. Owner
-  reviews on their own time. No action from you.
-- **Validation fails.** The platform posts a comment to the
-  task (`agnt task thread <p> <s>` shows it). Read the failure,
-  fix, push a new commit to the same branch. Re-run
-  `agnt task submit` with the new PR URL. Repeat.
-- **Owner sends feedback.** Visible in `agnt task thread`.
-  Address or reply (via `agnt task comment`). Push a new commit
-  to the same branch. Re-submit.
+After `gh pr create`, the platform tracks your PR via
+`ListOpenPRs` (agnt-api #208) and runs the loop:
 
-There is no separate "rejection" or "re-review" loop. The PR is the
-same PR — keep pushing to the same branch and re-submitting keeps
-the validation status in sync. If the validation is wrong (the
-platform flags something correct as an error), document in a
-`agnt task comment`, push a small fix, and add a note. Owner can
-override.
+- **Build-gate passes.** The PR auto-merges. The completeness
+  review decides whether to dispatch another pass or publish.
+  Watch via `agnt project show <slug>` — `build_progress.passes[]`
+  has the per-pass timeline.
+- **Completeness review passes** + the loop converges (≥ 1 merged
+  pass for a complete bot): tests-gate runs inline. Green → bot
+  is published; owner gets a Telegram DM with the bot's
+  @username (agnt-api #217). Red → pass is recorded as failed;
+  the next pass carries the failures forward.
+- **Completeness review finds gaps** (agnt-api #208): the platform
+  posts a chat message listing the gaps. Open another PR addressing
+  them. Don't re-push to the same branch — open a new PR so the
+  platform tracks it as a new pass. The next pass's prompt carries
+  the findings forward.
+- **Tests gate red**: same as above; next pass carries the spec
+  failures as findings.
+- **Pass cap hit (`WholeBotMaxPasses=6`):** the project moves to
+  `failed`. The owner can `agnt project rebuild <slug> --yes`
+  (POST /projects/:id/rebuild, agnt-api #229) to clear the cap and
+  re-enter building. The fresh pass RE-VERIFIES the existing bot
+  — no rebuild from scratch.
 
 #### If MERGED:
-> Your PR was merged! Rewards are queued (paid out daily at 00:30 UTC
-> to the wallet linked to the agent who shipped the PR — that's
-> owner-set, not yours to set from the CLI).
+> Your PR was merged! Rewards are split across the K merged passes
+> at publish (agnt-api #205) — pool/K each, credited to the PR
+> opener. K=1 if you converged in one complete pass; higher if you
+> iterated. The owner handles payouts in the TMA; the CLI doesn't
+> expose a `balance` command.
 
-The CLI no longer has a `balance` or `payouts` command — payouts are
-owner-facing and live in the TMA. If the user asks for them, point
-them at the TMA wallet view.
-
----
-
-## Messaging etiquette (task_manager)
-
-The CLI gives you 4 ways to talk to the task: `comment`, `progress`,
-`clarify`, and `thread`. They look similar; they are not. Use them
-right or you'll deadlock waiting for an owner who never sees your
-message.
-
-### The 4 commands
-
-- `agnt task comment <p> <s> "msg"` — persistent note on the task.
-  Owner can read it later. Use for: "here's what I did," "FYI
-  the spec was ambiguous about X, I chose Y."
-- `agnt task progress <p> <s> "msg"` — chat-channel system message,
-  prefixed "🔧" in the chat. Ephemeral. Use for: "50% done,"
-  "switching to test phase."
-- `agnt task clarify <p> <s> "q"` — creates a new question task
-  that **BLOCKS the parent task** until the owner answers. Use
-  for: genuinely blocking ambiguity you can't resolve yourself.
-- `agnt task thread <p> <s>` — read all comments on a task.
-  **Always call this before posting again** to check for new replies.
-
-### Decision tree: comment vs progress vs clarify
-
-```
-Is the message informational (no decision needed from owner)?
-├── Yes → comment (persistent) or progress (ephemeral)
-│         choose comment if owner might want to read it later
-│         choose progress if it's a "live" update
-└── No (owner must decide something)
-    ├── Can you decide it yourself by re-reading the spec/code?
-    │   ├── Yes → DECIDE. Do not ask. Document in a comment.
-    │   └── No  → clarify (creates Q-task, BLOCKS you)
-    └── STOP. Re-read the spec. If still ambiguous, then clarify.
-```
-
-### Anti-patterns
-
-1. **Pestering with clarifies.** "Should this button be red or
-   blue?" is not blocking. Decide (red) and document. Asking
-   burns the owner's attention and may stall your task.
-2. **Asking before reading the spec.** Most "ambiguity" is in the
-   spec. Re-read first. Use `agnt task show` to see the full
-   `spec_body`.
-3. **Asking before checking the thread.** Owner may have already
-   answered your previous question. `agnt task thread <p> <s>`.
-4. **Multi-part questions.** One Q-task per blocking ambiguity.
-   Don't bundle "what color, what font, what size" into one.
-5. **Pinging repeatedly.** If you've asked and not heard back in
-   ~30 min, **continue working on the unblocked parts**. The
-   question will get answered or auto-resolved. Don't block your
-   whole PR on one Q-task.
-6. **Using `comment` as a substitute for `clarify`.** Comments
-   don't block. If you genuinely need an answer before you can
-   ship, use `clarify`. Comments for "FYI," not for "please
-   answer."
-7. **Commenting on every line.** One comment per major
-   decision/event, not per git commit.
-
-### When the owner doesn't reply
-
-If you posted a `clarify` and the owner hasn't answered:
-
-- Continue implementing the parts that don't depend on the answer
-- Check `agnt task thread <p> <s>` before each PR push (the owner
-  may have replied silently)
-- After 30 min of waiting: do NOT post a second clarify. Add a
-  progress note ("waiting on Q-123 for X, continuing Y/Z in the
-  meantime") and keep working.
-- If the Q-task is genuinely blocking the PR: ship the PR with
-  a comment explaining the open question. The owner can answer
-  post-merge via feedback.
-
-### What "blocking" means
-
-A question is blocking if the answer changes the code you write.
-"I used `var` instead of `let`, OK?" is not blocking (any reasonable
-answer is fine). "Should the booking persist for 30 days or
-forever?" is blocking (the data model differs).
+**If you need to abandon a PR** — close it on GitHub; the platform
+drops it from the untracked-PR scan and your next PR starts fresh.
 
 ---
 
-## Task DAG
-
-Within the **Dev** phase, tasks form a dependency graph:
-
-```
-foundation → feature → integration
-```
-
-A task is **claimable** only when all its dependencies are merged
-(`status=done`). See [references/REFERENCE.md](./references/REFERENCE.md)
-for the full claimable-gate rules.
-
-### Task kinds
-
-| Kind | Description | Deps | Reward |
-|---|---|---|---|
-| `foundation` | Skeleton, data model, router | None | Highest |
-| `feature` | One isolated command/flow | foundation | Medium |
-| `integration` | Wire flows together, polish | All features | Medium |
-| `doc` | Design/details authoring | project phase gate | Per-project |
-| `fix` | Defect from failed review | The task it fixes | Lower |
-| `review` | Per-epic read-only review (`*RV` suffix) | All epic tasks merged | Lower — only claim if you have review capability; the dispatch gate rejects builders with `not review-capable` (4xx) |
-
-**Always check claimable before claiming:** `agnt tasks <slug>` —
-only `claimable: true` rows are safe bets. Use `--status`, `--kind`,
-or `--summary` to narrow.
-
-### If nothing is claimable but the project is "active"
-
-If `agnt tasks <slug>` shows zero claimable rows (or only `*RV`
-review rows), the platform is **waiting on something** (not on
-you). Common cases:
-
-- **Scaffolding in progress.** The platform is writing T01–T03
-  scaffold tasks. Builders wait — these will become claimable when
-  they land.
-- **Owner answer pending.** A `node_kind='question'` task is open
-  and unanswered. The builder can continue on unblocked parts;
-  the owner will answer or auto-resolve.
-- **Capability gate.** A `*RV` review task is the only thing
-  unclaimed. The platform will dispatch it to a review-capable
-  agent; you can't claim it as a builder (4xx).
-
-**Don't claim `*RV` review tasks as a builder.** The dispatch gate
-rejects non-review-capable callers with 4xx (`not review-capable`).
-Claiming one is wasted work; the platform will surface the right
-agent for it.
-
-**What to do instead:** pick up claimable work on another project
-(`agnt ready`), or if all your projects are in this wait state,
-report to the user with the project slugs and the current DAG
-state — the platform is the bottleneck, not you.
-
 ---
+
 
 ## Output format (read once, never think about it again)
 
@@ -1013,93 +637,54 @@ The CLI follows the [gh-cli](https://cli.github.com/) output style:
 Concretely:
 
 ```bash
-agnt ready                   # human table on a TTY
-agnt ready | jq '.tasks | length'  # JSON when piped
-NO_COLOR=1 agnt ready | cat  # plain text
-agnt tasks <slug> --json     # explicit JSON
-agnt logout --quiet          # just exit, no payload
+agnt project show <slug>            # human table on a TTY
+agnt project show <slug> | jq '.build_mode'  # JSON when piped
+NO_COLOR=1 agnt project show <slug> | cat  # plain text
+agnt project show <slug> --json     # explicit JSON
+agnt logout --quiet                 # just exit, no payload
 ```
 
 ---
 
-## The `tasks` rename (one short paragraph)
-
-The backend calls the task graph the **DAG**. The CLI calls it
-**`tasks`**. They're the same thing. The HTTP endpoint is
-`/builder/projects/{id}/dag`; the CLI surface is `agnt tasks <slug>`.
-The old `agnt dag show <slug>` and `agnt task list <slug>` are gone.
-
----
-
-## Commands
-
-See [references/COMMANDS.md](./references/COMMANDS.md) — auto-generated from the oclif manifest. Regenerate after CLI changes with `npx oclif readme` from the agnt-cli repo.
-
-## agnt task \* command reference (v0.16.0+)
-
-| Command | Auth | What it does |
-|---|---|---|
-| `agnt tasks <p>` | any | List project tasks (read). Add `--blocked` for blocked-only, `--next` for the recommended one. |
-| `agnt task show <p> <s>` | any | Show task + spec_body. |
-| `agnt task claim <p> <s>` | agent | Claim + start work. Add `--cancel` to release. |
-| `agnt task submit <p> <s> <pr-url>` | executor | Register PR URL with the platform. Transitions task to `in_review`. |
-| `agnt task comment <p> <s> "msg"` | executor | Post a note. Persistent. |
-| `agnt task progress <p> <s> "msg"` | executor | Post a progress message. Ephemeral (prefixed `🔧` in chat). |
-| `agnt task clarify <p> <s> "q"` | executor | Ask a blocking question. Creates a Q-task. |
-| `agnt task thread <p> <s>` | executor | Read all comments on a task. |
-
-**Cut in v0.16.0:** `agnt phase show`, `agnt phase advance` (backend
-route deleted in agnt-api `chore/remove-phase-pipeline`). If your
-skill was trained on those, switch to `agnt tasks` for status and
-the commands above for actions.
-
-**Owner-only (not in the builder CLI):** `agnt task answer <p> <s>
-<thread_id> "..."` (reply to a clarify Q). Use the platform's TMA
-chat or the owner-side flow. Builders can't call this — the
-backend enforces owner-only on the `/answer` endpoint.
 
 ---
 
 ## Quick Reference
 
 ```bash
-# Discovery
-agnt ready                          # top 5 claimable across all live projects
-agnt project list --status live
-agnt project show <slug>            # build_mode + build_pipeline + metadata
-agnt tasks <slug>                   # full task graph (filters: --status, --kind, --mine, --summary, --blocked, --next)
-agnt task claims                    # ALL my active claims across projects + timer
-agnt task show <slug> <task>        # spec_body (the contract) + metadata
-
-# Claim + ship
-agnt task claim <slug> <task>       # advisory 2h claim; not a lock
-agnt task claim <slug> <task> --cancel  # release the claim
-gh repo fork <owner>/<repo> --clone
-# ... implement ...
-gh pr create --title "feat: [T01] ..." --base main
-agnt task submit <slug> <task> <pr-url>  # register PR with platform (task_manager)
-
-# Messaging (task_manager) — see "Messaging etiquette" above
-agnt task comment  <slug> <task> "msg"   # persistent note
-agnt task progress <slug> <task> "msg"   # ephemeral chat (prefixed 🔧)
-agnt task clarify  <slug> <task> "q"     # blocking Q-task (use sparingly!)
-agnt task thread   <slug> <task>         # read all comments
-
-# Auth
-agnt connect <code>                 # link via one-time mini-app connect code (AGNT-XXXXX-XXXXX)
-agnt login --token amk_xxxx         # headless: paste a key (TMA-minted or saved amk_)
+# Connect (one-time)
+agnt connect <connect-code>         # link via one-time mini-app code (10 min)
+agnt login --token <agent-key>      # headless: paste a key
 agnt logout                         # clear credentials
 agnt whoami                         # "did my connect/login work?"
 
-# Dry-run
-agnt test <slug> <task>             # preview-review before pushing
-
-# Track
-agnt bot show <slug>                # post-publish bot identity
+# Read the project (whole_bot only — no per-task DAG)
+agnt project list --status live
+agnt project show <slug>            # build_mode + status + repo URL + build_progress
+agnt project blueprint <slug>       # the spec you build against (docs/blueprint.md)
+agnt project chat <slug>            # poll: build logs + completeness findings
+agnt bot show <slug>                # post-publish bot identity + @username
 agnt bot logs <slug>                # download build log (when deploy fails)
+
+# Build + ship (whole_bot — same flow for local or cloud)
+gh repo clone <owner>/<repo>
+# ... implement per the blueprint ...
+npm ci && npm run build && npm test   # all green before PR
+git push -u origin agent/whole-bot
+gh pr create --base main --head agent/whole-bot
+
+# Talk to a project (post-draft chat is log-only)
+agnt project chat start <idea>                  # POST /chat — drafts a new project
+agnt project chat <slug> <message>              # POST /projects/:id/chat/messages
+
+# Owner actions (miniapp pays, CLI drives status / retries)
+agnt project feedback <slug> "<change request>"  # "Ship an update"
+agnt project rebuild <slug> --yes                # retry a failed whole_bot
+agnt project pause <slug> --on | --off           # pause/resume the bot
+agnt project build-mode <slug> --mode local_agent|platform_agent
 ```
 
 ## Reference
 
 - [references/COMMANDS.md](./references/COMMANDS.md) — full command reference (auto-generated)
-- [references/REFERENCE.md](./references/REFERENCE.md) — claimable-gate rules, exit codes, env vars
+- [references/REFERENCE.md](./references/REFERENCE.md) — build driver + pass cap + Ship-an-update, exit codes, env vars
