@@ -1,19 +1,31 @@
 ---
 name: telegram-bot-ui
 description: >
-  Use when wiring Telegram keyboards — inline buttons, callback routing,
-  reply_markup, grammY attach syntax, the inlined toolkit's UI builders
-  (inlineButton, urlButton, inlineKeyboard, menuKeyboard, confirmKeyboard,
-  paginate), ForceReply markup, custom keyboards for typed input
-  (RequestContact, RequestLocation, RequestUser, RequestChat,
-  RequestManagedBot), copy_text buttons, web_app buttons.
-  Covers mechanics only — for microcopy, flow patterns, error UX,
-  onboarding, anti-patterns, see telegram-bot-ux.
-  Triggers: inline buttons, keyboard, telegram menu, bot UI, callback
-  buttons, pagination, reply_markup, ForceReply, copy_text, web_app.
+  Wire Telegram keyboards — the mechanics. Covers inline buttons,
+  callback routing, reply_markup, grammY attach syntax, the inlined
+  toolkit's UI builders (inlineButton, urlButton, inlineKeyboard,
+  menuKeyboard, confirmKeyboard, paginate), ForceReply markup, custom
+  keyboards for typed input (RequestContact, RequestLocation,
+  RequestUser, RequestChat, RequestManagedBot), copy_text buttons,
+  web_app buttons. USE FOR: inline buttons, keyboard, telegram menu,
+  bot UI, callback buttons, pagination, reply_markup, ForceReply,
+  copy_text, web_app, callback_data, prefix routing, regex routing —
+  even if the user doesn't say "inline" or "keyboard" explicitly. DO
+  NOT USE FOR: microcopy / flow patterns / error UX / onboarding /
+  anti-patterns (see telegram-bot-ux router), or the Bot API
+  foundation (see telegram-bot-api-fundamentals).
+  Triggers: inline buttons, keyboard, telegram menu, bot UI, callback buttons, pagination, reply_markup, ForceReply, copy_text, web_app, callback_data, prefix routing, regex routing.
 compatibility: Works with grammY alone, or the inlined toolkit builders
   (at src/toolkit/ui/ in the bot-starter template).
 license: MIT
+metadata:
+  version: "0.19.0"
+  status: active
+  author: agntdev
+  tags: [telegram, grammY, keyboard, inline-button, callback]
+  related_skills:
+    - telegram-bot-api-fundamentals
+    - telegram-bot-ux
 ---
 
 # telegram-bot-ui Skill
@@ -78,7 +90,7 @@ confirmations, pagination.
 
 Tap "Yes" → bot receives `callback_query` with `data: "confirm:42:yes"`.
 
-Limits (see [telegram-bot-basics](../telegram-bot-basics/SKILL.md) §4):
+Limits (see [telegram-bot-api-fundamentals](../telegram-bot-api-fundamentals/SKILL.md) §4):
 
 - `callback_data` ≤ **64 BYTES** (UTF-8). Cyrillic / emoji = multi-byte.
 - ≤ 100 buttons per keyboard.
@@ -372,7 +384,7 @@ page:<n>                 — page jump
 pg:prev:<n> / pg:next:<n> — paginate helper
 ```
 
-Mind the 64-byte limit (`telegram-bot-basics` §4). For non-ASCII
+Mind the 64-byte limit (`telegram-bot-api-fundamentals` §4). For non-ASCII
 projects, prefer short prefixes and put the long ID in your own
 server-side map keyed by a UUID sent in `callback_data`.
 
@@ -556,7 +568,7 @@ Toolkit builders produce the **same JSON shapes** grammY expects. They're conven
 2. **`paginate()` without handler** — buttons generate `pg:prev:X` / `pg:next:X` data. Must route them in callback handler.
 3. **Not catching unknown callbacks** — always have fallback `answerCallbackQuery` for stray callback data.
 4. **Using `editMessageText` on a new message** — you need `message_id` from a previous reply. `ctx.reply()` for first message, `ctx.editMessageText()` for updates.
-5. **64-byte `callback_data` with non-ASCII** — Telegram rejects with `BUTTON_DATA_INVALID`. It's BYTES, not chars. See `telegram-bot-basics` §4.
+5. **64-byte `callback_data` with non-ASCII** — Telegram rejects with `BUTTON_DATA_INVALID`. It's BYTES, not chars. See `telegram-bot-api-fundamentals` §4.
 6. **ForceReply without a step filter** — every text message in the chat will trigger your "awaiting X" handler. Gate by `ctx.session.step`. See `telegram-bot-ux` §6.
 7. **Reply keyboard + `resize_keyboard: true` then relying on it on Desktop** — Telegram Desktop 5.3.2+ ignores `resize_keyboard`. Design for 4 columns max.
 8. **Missing `input_field_placeholder`** — users see an empty input field and don't know what to type. Always set it.

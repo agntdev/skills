@@ -8,6 +8,180 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.19.0 (2026-06-27) — split skills bundle 8→13 + metadata + pushy descriptions + drop CLI chat/build-mode/pause/feedback + drop build-modes framing
+
+**MINOR** cut, paired with `@agntdev/cli@0.19.0`. The CLI drops
+four owner-only / agent-irrelevant commands
+(`chat`, `build-mode`, `pause`, `feedback`); the skill bundle
+splits from 8 → 13 installable skills along orthogonal concerns
+mirroring the samber `cc-skills-golang` model; every skill gets
+a `metadata:` block and a pushy `description` with explicit
+`USE FOR` / `DO NOT USE FOR` cues.
+
+### CLI pair (`@agntdev/cli@0.19.0`)
+
+Four commands removed (owner-only / agent-irrelevant — verified
+against `agnt-api/internal/handler/{builder_chat,builder_build_mode_api,builder_bot_deploy,builder_feedback}.go`,
+all gated by `isProjectOwner`, and against the agnt-gm.ai TMA
+which actually wires these surfaces):
+
+- `agnt project chat` — creator concern (TMA only).
+- `agnt project build-mode` — `local_agent` / `platform_agent`
+  switch; owner-only, lives in the TMA.
+- `agnt project pause` — owner-only; lives in the TMA.
+- `agnt project feedback` — operator steers the agent **in the
+  LLM session** (Claude Code / Claude.ai / similar), not via an
+  out-of-band CLI command. Async owner → bot change requests
+  stay on the mini-app's `FeedbackComposer`
+  (`POST /builder/projects/:id/feedback`) — API endpoint
+  untouched.
+
+`agnt project show` no longer renders the `Build mode:` line in
+human output. The `build_mode` field is still in the JSON
+response for backward compat with existing scripts; the agent
+doesn't branch on it.
+
+**Final v0.19.0 command surface:**
+
+```
+agnt connect / login / logout / whoami
+agnt project list / show / blueprint / rebuild
+agnt bot show / logs
+```
+
+### Skill splits
+
+```
+8 skills (v0.18.0)              13 skills (v0.19.0)
+─────────────────────────       ──────────────────────────────────────
+agnt-cli-builder       →        agnt-cli-builder (router + 3 references)
+                                   references/auth-model.md
+                                   references/blueprint-contract.md
+                                   references/pass-loop.md
+telegram-bot-basics    →        telegram-bot-api-fundamentals  (§1–6)
+                                telegram-bot-api-rich-messages  (§1–6)
+telegram-bot-ux        →        telegram-bot-ux                (~50-line router)
+                                telegram-bot-ux-rules           (§1–5 + §9)
+                                telegram-bot-flow-patterns      (§6)
+                                telegram-bot-onboarding         (§7 + §8)
+                                telegram-bot-anti-patterns      (§10 + §11)
+                                   references/01–20.md (one per anti-pattern)
+                                   references/ux-review-checklist.md
+```
+
+`agnt-cli-builder` slimmed 690 → ~270 lines (router + cold-start +
+activation + build flow + quick reference). Long-form (auth, pass
+loop, blueprint contract) moved to `references/*.md` files.
+
+`telegram-bot-ux` slimmed 945 → 49 lines (router only); four
+orthogonal sub-skills split out plus a router that picks among them.
+
+`telegram-bot-basics` (847 lines) deleted; content split into
+`telegram-bot-api-fundamentals` (HTTP / grammY / toolkit / limits /
+parse_mode / entities) and `telegram-bot-api-rich-messages`
+(Rich Messages 10.1 / Checklists 9.1 / chat types / media / webhook).
+
+The remaining skills are unchanged in body but get the metadata
+block + pushy description: `telegram-bot-ui`, `telegram-bot-sessions`,
+`telegram-bot-deploy`, `telegram-test-specs`, `telegram-test-advanced`.
+
+### Dropped skill content
+
+- **`references/build-modes.md`** — deleted. The cloud-vs-local
+  agent framing is gone entirely. There is no `build_mode` branch
+  in the agent's flow; the agent is just the agent. The CLI's
+  `agnt project show` JSON still exposes `build_mode` for
+  backward compat (other consumers may read it) but the skill
+  doesn't teach it.
+- **task_manager + phase pipeline references** — everywhere.
+- **"What mode am I in?" / "What flow am I on?" / STOP gate** —
+  the agent doesn't branch on `build_mode`.
+- **`agnt project build-mode`** — dropped from the agnt-cli-builder
+  Quick Reference (CLI command gone in `@agntdev/cli@0.19.0`).
+
+### Frontmatter metadata
+
+Every SKILL.md now carries a `metadata:` block alongside
+`name` / `description` / `compatibility` / `license`:
+
+- `metadata.version` — `"0.19.0"`, matches the bundle tag.
+- `metadata.status` — `"active"` for all skills in this cut.
+  Future values: `experimental` / `deprecated` / `archived`.
+- `metadata.author` — `"agntdev"`.
+- `metadata.tags` — kebab-case slugs for category filters
+  (e.g. `telegram`, `grammy`, `session`, `harness`, `router`).
+- `metadata.related_skills` — sibling skill names this skill
+  cross-references. Replaces ad-hoc inline cross-refs with a
+  structured list that's easy for an agent runtime to walk.
+
+The `metadata` block is loaded at startup alongside `name` and
+`description` — kept small (≤10 lines). AGENTS.md documents
+the convention.
+
+### Pushy descriptions
+
+Every `description` field now follows the Anthropic pushy pattern
+([platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices))
+with explicit `USE FOR` / `DO NOT USE FOR` cues and trigger-term
+synonyms. Example:
+
+```yaml
+description: >
+  Wire up the Telegram Bot API foundation. Covers how the HTTP
+  client works (long polling vs webhook), how grammY wraps it,
+  the agntdev inlined toolkit, and the hard limits you will hit.
+  USE FOR: building a Telegram bot, grammY bot, bot entry point,
+  bot token, long polling, webhook, callback_data limit, parse_mode,
+  HTML, MarkdownV2, message entity, createBot, makeBot, ctx.reply
+  — even if the user doesn't say "inline" or "keyboard" explicitly.
+  DO NOT USE FOR: Rich Messages / Checklists / chat types / media
+  types (see telegram-bot-api-rich-messages), keyboard wiring
+  mechanics (see telegram-bot-ui), or UX rules like microcopy and
+  error handling (see telegram-bot-ux-rules).
+```
+
+### Validator extension
+
+`scripts/validate-skills.mjs` now catches the failure modes that
+bit the v0.19.0 cut:
+
+- **`metadata.related_skills`** — every listed name must match an
+  existing directory under `skills/`. (Caught the 11 stale
+  `telegram-bot-basics` references that slipped through when
+  basics was deleted in this same cut.)
+- **Inter-skill `../<dir>/SKILL.md` cross-references** — every
+  sibling link in body text must resolve to an existing skill
+  directory.
+- The original intra-skill `references/...` resolution check stays.
+
+These checks run in the existing `node scripts/validate-skills.mjs`
+invocation; no new script.
+
+### Excluded from this cut, kept for future iterations
+
+- `user-invocable` / `allowed-tools` frontmatter flags
+  (Anthropic-specific; not needed by our current install target).
+- `metadata.openclaw.requires.bins` (OpenClaw-specific).
+- `agents/{reviewer,trigger-tuner}.md` helper sub-agents
+  (Fusion pattern; we don't ship sub-agent plumbing yet).
+- Safety tier rubric (Google pattern; not needed at our scale).
+- `.claude-plugin/marketplace.json` + `.cursor-plugin/*` +
+  `.agents-plugin/*` (we don't ship to those marketplaces yet).
+- `evals/evals.json` per skill (samber pattern; eval runner
+  plumbing not in place — TBD).
+- README command-reference table on `agnt-cli` — stripped in the
+  same cut. Agents use the skills + `--help`; humans rarely touch
+  the CLI directly.
+
+### Validation
+
+`node scripts/validate-skills.mjs` reports ✅ 13 skills OK.
+
+### Pair
+
+`@agntdev/cli@0.19.0` + `v0.19.0` skills. Both shipped in this
+commit; both repos share a `v0.19.0` tag.
+
 ## v0.18.0 (2026-06-25) — whole_bot only (drop task_manager + phase + TON)
 
 **MINOR** cut that mirrors the upstream agnt-api removals

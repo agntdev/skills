@@ -1,0 +1,9 @@
+# macOS Finder artifacts
+.DS_Store
+
+# Editor scratch
+*.swp
+*~
+
+# Node
+node_modules/

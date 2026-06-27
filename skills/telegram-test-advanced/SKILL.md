@@ -1,15 +1,30 @@
 ---
 name: telegram-test-advanced
 description: >
-  Use when a Telegram bot's tests outgrow declarative BotSpec JSON — mocking
-  external dependencies (DB / HTTP / payments), simulating Telegram API failures
-  (429 rate limit, blocked user, message-not-modified), and writing raw
-  handleUpdate tests with direct assertions. Assumes the tokenless harness model
-  from telegram-test-specs.
-  Triggers: mock bot dependencies, test error paths, rate limit test, blocked user test,
-  programmatic bot test, handleUpdate test, simulate api failure, payment test.
+  Escape hatch when declarative BotSpec JSON runs out of road. Covers
+  mocking external dependencies (DB / HTTP / payments), simulating
+  Telegram API failures (429 rate limit, blocked user,
+  message-not-modified), and writing raw handleUpdate tests with
+  direct assertions. Assumes the tokenless harness model from
+  telegram-test-specs. USE FOR: mock bot dependencies, test error
+  paths, rate limit test, blocked user test, programmatic bot test,
+  handleUpdate test, simulate api failure, payment test, vitest,
+  vitest + grammy, mocked DB, mocked HTTP, edge-case Update fixtures
+  — even if the user doesn't say "vitest" or "mock" explicitly.
+  DO NOT USE FOR: declarative BotSpec JSON dialog tests (see
+  telegram-test-specs — programmatic tests do NOT count toward the
+  command-coverage gate).
+  Triggers: mock bot dependencies, test error paths, rate limit test, blocked user test, programmatic bot test, handleUpdate test, simulate api failure, payment test, vitest, vitest + grammy, mocked DB, mocked HTTP, edge-case Update fixtures.
 compatibility: Requires grammY + a test runner (vitest). The inlined toolkit (at src/toolkit/ in the bot-starter template) for the makeBot() factory.
 license: MIT
+metadata:
+  version: "0.19.0"
+  status: active
+  author: agntdev
+  tags: [telegram, testing, vitest, mocking, error-paths]
+  related_skills:
+    - telegram-test-specs
+    - telegram-bot-api-fundamentals
 ---
 
 # telegram-test-advanced Skill
@@ -22,7 +37,7 @@ bot's own dependencies, forcing Telegram API failures, and dropping to raw
 > **first** — it owns the tokenless harness model, the BotSpec JSON format, and
 > the coverage gate. This skill is the escape hatch for the cases that JSON
 > can't express. See [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the
-> discovery-and-claim loop, and [telegram-bot-basics](../telegram-bot-basics/SKILL.md)
+> discovery-and-claim loop, and [telegram-bot-api-fundamentals](../telegram-bot-api-fundamentals/SKILL.md)
 > for the `makeBot()` factory these tests rely on.
 
 ---
@@ -204,7 +219,7 @@ expect(calls[0].payload.text).toBe("Balance: 42");
 ```
 
 This composes with the `makeBot()` factory contract from
-[telegram-bot-basics](../telegram-bot-basics/SKILL.md): one fresh bot **and**
+[telegram-bot-api-fundamentals](../telegram-bot-api-fundamentals/SKILL.md): one fresh bot **and**
 one fresh set of fakes per call, so nothing leaks between tests.
 
 ### Fallback: `vi.mock()`

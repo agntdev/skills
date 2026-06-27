@@ -5,7 +5,7 @@ $ npm install -g @agntdev/cli
 $ agnt COMMAND
 running command...
 $ agnt (--version)
-@agntdev/cli/0.18.0 darwin-arm64 node-v24.15.0
+@agntdev/cli/0.19.0 darwin-arm64 node-v24.15.0
 $ agnt --help [COMMAND]
 USAGE
   $ agnt COMMAND
@@ -22,11 +22,7 @@ USAGE
 * [`agnt login`](#agnt-login)
 * [`agnt logout`](#agnt-logout)
 * [`agnt project blueprint PROJECTID`](#agnt-project-blueprint-projectid)
-* [`agnt project build-mode PROJECTID`](#agnt-project-build-mode-projectid)
-* [`agnt project chat [PROJECTID] [MESSAGE]`](#agnt-project-chat-projectid-message)
-* [`agnt project feedback PROJECTID TEXT`](#agnt-project-feedback-projectid-text)
 * [`agnt project list`](#agnt-project-list)
-* [`agnt project pause PROJECTID`](#agnt-project-pause-projectid)
 * [`agnt project rebuild PROJECTID`](#agnt-project-rebuild-projectid)
 * [`agnt project show ID`](#agnt-project-show-id)
 * [`agnt whoami`](#agnt-whoami)
@@ -60,7 +56,7 @@ EXAMPLES
   $ agnt bot logs my-project --tail 100
 ```
 
-_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/bot/logs.ts)_
+_See code: [src/commands/bot/logs.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/bot/logs.ts)_
 
 ## `agnt bot show PROJECTID`
 
@@ -86,7 +82,7 @@ EXAMPLES
   $ agnt bot show my-project --json
 ```
 
-_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/bot/show.ts)_
+_See code: [src/commands/bot/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/bot/show.ts)_
 
 ## `agnt connect CODE`
 
@@ -112,7 +108,7 @@ EXAMPLES
   $ agnt connect AGNT-7K2MW-QX4RT --json
 ```
 
-_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/connect.ts)_
+_See code: [src/commands/connect.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/connect.ts)_
 
 ## `agnt help [COMMAND]`
 
@@ -154,7 +150,7 @@ EXAMPLES
   $ agnt login --token amk_xxxx
 ```
 
-_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/login.ts)_
 
 ## `agnt logout`
 
@@ -175,7 +171,7 @@ EXAMPLES
   $ agnt logout
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/logout.ts)_
 
 ## `agnt project blueprint PROJECTID`
 
@@ -201,100 +197,7 @@ EXAMPLES
   $ agnt project blueprint my-project --json
 ```
 
-_See code: [src/commands/project/blueprint.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/blueprint.ts)_
-
-## `agnt project build-mode PROJECTID`
-
-Switch the build driver of a whole_bot project (local_agent ↔ platform_agent)
-
-```
-USAGE
-  $ agnt project build-mode PROJECTID -m local_agent|platform_agent [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-
-FLAGS
-  -j, --json           Output in JSON format (default if piped)
-  -m, --mode=<option>  (required) New build mode: local_agent (you build) or platform_agent (cloud agent)
-                       <options: local_agent|platform_agent>
-  -q, --quiet          Output only the ID or key value
-
-DESCRIPTION
-  Switch the build driver of a whole_bot project (local_agent ↔ platform_agent)
-
-EXAMPLES
-  $ agnt project build-mode proj_abc --mode platform_agent
-
-  $ agnt project build-mode my-bot --mode local_agent
-
-  $ agnt project build-mode proj_abc --mode platform_agent --json
-```
-
-_See code: [src/commands/project/build-mode.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/build-mode.ts)_
-
-## `agnt project chat [PROJECTID] [MESSAGE]`
-
-Talk to a whole_bot project: start a new one with an idea, or send/poll messages on an existing project
-
-```
-USAGE
-  $ agnt project chat [PROJECTID] [MESSAGE] [-j] [-q] [--after <value>] [--limit <value>]
-
-ARGUMENTS
-  [PROJECTID]  Project ID or slug. Use `start <idea>` to draft a new project. The trailing positional arg is the message
-               to send.
-  [MESSAGE]    Optional message (for `chat <slug> <message>`).
-
-FLAGS
-  -j, --json           Output in JSON format (default if piped)
-  -q, --quiet          Output only the ID or key value
-      --after=<value>  Poll messages with id > this (default 0 = from the start).
-      --limit=<value>  [default: 50] Max messages to return (default 50, cap 200).
-
-DESCRIPTION
-  Talk to a whole_bot project: start a new one with an idea, or send/poll messages on an existing project
-
-EXAMPLES
-  $ agnt project chat start "a bot that turns receipts into expense reports"
-
-  $ agnt project chat my-project-slug
-
-  $ agnt project chat my-project-slug "Add a /refund command"
-
-  $ agnt project chat my-project-slug --json
-```
-
-_See code: [src/commands/project/chat.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/chat.ts)_
-
-## `agnt project feedback PROJECTID TEXT`
-
-Ship an update — request a change to a built whole_bot ("Ship an update" composer)
-
-```
-USAGE
-  $ agnt project feedback PROJECTID TEXT [-j] [-q]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug (must be a finished whole_bot)
-  TEXT       What to change — the next pass's prompt carries this forward.
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-
-DESCRIPTION
-  Ship an update — request a change to a built whole_bot ("Ship an update" composer)
-
-EXAMPLES
-  $ agnt project feedback proj_abc "Add a /refund command"
-
-  $ agnt project feedback my-bot "Rename the start button to 'Menu'"
-
-  $ agnt project feedback proj_abc "Fix the timezone bug" --json
-```
-
-_See code: [src/commands/project/feedback.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/feedback.ts)_
+_See code: [src/commands/project/blueprint.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/project/blueprint.ts)_
 
 ## `agnt project list`
 
@@ -322,37 +225,7 @@ EXAMPLES
   $ agnt project list --json
 ```
 
-_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/list.ts)_
-
-## `agnt project pause PROJECTID`
-
-Pause or resume the managed Telegram bot (owner only)
-
-```
-USAGE
-  $ agnt project pause PROJECTID [-j] [-q] [--on | --off]
-
-ARGUMENTS
-  PROJECTID  Project ID or slug
-
-FLAGS
-  -j, --json   Output in JSON format (default if piped)
-  -q, --quiet  Output only the ID or key value
-      --off    Resume the bot (redeploy through the worker).
-      --on     Pause the bot (no incoming messages handled).
-
-DESCRIPTION
-  Pause or resume the managed Telegram bot (owner only)
-
-EXAMPLES
-  $ agnt project pause proj_abc --on
-
-  $ agnt project pause my-bot --off
-
-  $ agnt project pause proj_abc --on --json
-```
-
-_See code: [src/commands/project/pause.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/pause.ts)_
+_See code: [src/commands/project/list.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/project/list.ts)_
 
 ## `agnt project rebuild PROJECTID`
 
@@ -381,11 +254,11 @@ EXAMPLES
   $ agnt project rebuild my-failed-bot --json
 ```
 
-_See code: [src/commands/project/rebuild.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/rebuild.ts)_
+_See code: [src/commands/project/rebuild.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/project/rebuild.ts)_
 
 ## `agnt project show ID`
 
-Show project details (whole_bot build + build_mode). Pipeline is whole_bot-only as of v0.18.0.
+Show project details (whole_bot pipeline).
 
 ```
 USAGE
@@ -399,7 +272,7 @@ FLAGS
   -q, --quiet  Output only the ID or key value
 
 DESCRIPTION
-  Show project details (whole_bot build + build_mode). Pipeline is whole_bot-only as of v0.18.0.
+  Show project details (whole_bot pipeline).
 
 EXAMPLES
   $ agnt project show proj_abc123
@@ -409,7 +282,7 @@ EXAMPLES
   $ agnt project show proj_abc123 --json
 ```
 
-_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/project/show.ts)_
+_See code: [src/commands/project/show.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/project/show.ts)_
 
 ## `agnt whoami`
 
@@ -432,5 +305,5 @@ EXAMPLES
   $ agnt whoami --json
 ```
 
-_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.18.0/src/commands/whoami.ts)_
+_See code: [src/commands/whoami.ts](https://github.com/agntdev/agnt-cli/blob/v0.19.0/src/commands/whoami.ts)_
 <!-- commandsstop -->

@@ -18,10 +18,16 @@
 //   7. `license` is one of the standard SPDX identifiers we ship
 //   8. No skill named "agnt-cli-creator" — that role moved to the TMA
 //   9. Every fenced code block in SKILL.md is balanced (open + close)
+//  10. Every name in `metadata.related_skills` is an existing skill dir
+//  11. Every inter-skill `../<skill>/SKILL.md` link resolves to a real
+//      sibling skill directory
+//  12. No skill cross-references a deleted predecessor (we don't have
+//      a deny-list yet — superseded names show up as related_skills /
+//      body refs and break agent runtime traversal). Caught by 10/11.
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, basename } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
@@ -157,6 +163,43 @@ for (const skillDir of walk(SKILLS_DIR)) {
     const abs = resolve(skillDir, rel);
     if (!existsSync(abs)) {
       err(dirName, `SKILL.md references missing file: ${rel}`);
+    }
+  }
+
+  // Inter-skill cross-references: `../<other-skill>/SKILL.md` must point
+  // at a sibling skill directory. (Previously the validator only checked
+  // intra-skill `references/...` paths, so deleted skills kept showing
+  // up in body links until an agent runtime hit a 404 mid-prompt.)
+  const sibRefRe = /\[([^\]]+)\]\(\.\.\/([A-Za-z0-9_-]+)\/SKILL\.md(?:#[^)]+)?\)/g;
+  let sib;
+  while ((sib = sibRefRe.exec(skillText)) !== null) {
+    const target = sib[2];
+    const targetDir = join(SKILLS_DIR, target);
+    if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+      err(
+        dirName,
+        `SKILL.md cross-references missing skill: ../${target}/SKILL.md — did a sibling skill get deleted without sweeping refs?`,
+      );
+    }
+  }
+
+  // `metadata.related_skills` — every name listed must be an existing
+  // skill directory. The simple line-based frontmatter parser above
+  // doesn't handle nested YAML lists, so we extract the raw block
+  // from the frontmatter text and pick the dash-prefixed names.
+  const rsMatch = skillText.match(/^metadata:\s*\n(?:[ \t].*\n)*?([ \t]+)related_skills:\s*\n((?:[ \t]+-\s+.*\n?)*)/m);
+  if (rsMatch) {
+    const listBlock = rsMatch[2];
+    const names = [...listBlock.matchAll(/^[ \t]+-\s+([A-Za-z0-9_-]+)/gm)].map((m) => m[1]);
+    for (const name of names) {
+      if (name === dirName) continue; // self-ref is fine
+      const targetDir = join(SKILLS_DIR, name);
+      if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+        err(
+          dirName,
+          `metadata.related_skills lists "${name}" but skills/${name}/ does not exist — sweep the cut`,
+        );
+      }
     }
   }
 

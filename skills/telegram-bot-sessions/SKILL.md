@@ -1,13 +1,27 @@
 ---
 name: telegram-bot-sessions
 description: >
-  Use when implementing user session persistence in a Telegram bot.
-  Covers Bot API's stateless nature, grammY session plugin + StorageAdapter,
-  and the inlined toolkit's MemorySessionStorage + harness isolation
+  Implement user session persistence in a Telegram bot. Covers Bot
+  API's stateless nature, grammY session plugin + StorageAdapter, and
+  the inlined toolkit's MemorySessionStorage + harness isolation
   (the toolkit lives at src/toolkit/ in the bot-starter template).
-  Triggers: session, persistence, bot state, user state, conversation flow.
+  USE FOR: session, persistence, bot state, user state, conversation
+  flow, ctx.session.step, ctx.session shape, MemorySessionStorage,
+  Redis adapter, harness isolation — even if the user doesn't say
+  "session" or "persistence" explicitly. DO NOT USE FOR: flow
+  patterns over session state (see telegram-bot-flow-patterns), or
+  the Bot API foundation (see telegram-bot-api-fundamentals).
+  Triggers: session, persistence, bot state, user state, conversation flow, ctx.session.step, ctx.session shape, MemorySessionStorage, Redis adapter, harness isolation.
 compatibility: Works with grammY sessions alone, or the inlined toolkit for defaults.
 license: MIT
+metadata:
+  version: "0.19.0"
+  status: active
+  author: agntdev
+  tags: [telegram, grammY, session, persistence, redis]
+  related_skills:
+    - telegram-bot-api-fundamentals
+    - telegram-bot-deploy
 ---
 
 # telegram-bot-sessions Skill

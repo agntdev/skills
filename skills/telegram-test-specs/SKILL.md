@@ -1,12 +1,27 @@
 ---
 name: telegram-test-specs
 description: >
-  Use when writing dialog test specs for a Telegram bot. Covers why tokenless
-  testing exists, how the harness replays Updates and captures API calls,
-  BotSpec JSON format, coverage rules, and the test harness CLI.
-  Tests are the objective review gate — all specs must pass for the bot to publish.
-  Triggers: write bot tests, dialog specs, harness, command coverage.
+  Write dialog test specs for a Telegram bot. Covers why tokenless
+  testing exists, how the harness replays Updates and captures API
+  calls, BotSpec JSON format, coverage rules, and the test harness
+  CLI. Tests are the objective publish gate — all specs must pass
+  for the bot to publish. USE FOR: write bot tests, dialog specs,
+  harness, command coverage, BotSpec JSON, tests/specs/*.json,
+  tests/commands/*.json, GATE verdict, coverage gate — even if the
+  user doesn't say "specs" or "test" explicitly. DO NOT USE FOR:
+  programmatic vitest tests with mocks and edge-case fixtures (see
+  telegram-test-advanced), or session persistence (see
+  telegram-bot-sessions).
+  Triggers: write bot tests, dialog specs, harness, command coverage, BotSpec JSON, tests/specs/*.json, tests/commands/*.json, GATE verdict, coverage gate.
 compatibility: Requires the inlined test harness (lives at src/toolkit/harness/ in the bot-starter template).
+metadata:
+  version: "0.19.0"
+  status: active
+  author: agntdev
+  tags: [telegram, testing, botspec, harness, coverage]
+  related_skills:
+    - telegram-test-advanced
+    - telegram-bot-api-fundamentals
 
 > **⚠️ Safety note — in-process bot execution.** This skill describes
 > running the bot's `makeBot()` **in-process** in the test harness so
@@ -28,10 +43,10 @@ license: MIT
 
 How to write dialog test specs for a Telegram bot — why tokenless testing, how the harness works, and the spec format.
 
-> **Built for the agntdev pipeline.** The Tests phase is the **objective
-> review gate** — every spec must pass for the bot to publish. See
-> [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for the
-> discovery-and-claim loop and how Test-phase tasks fit in.
+> **Built for the agntdev pipeline.** The tests-gate is the
+> **objective publish gate** — every spec must pass for the bot to
+> publish. See [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for
+> the build loop and how the gate fits in.
 
 ---
 
@@ -264,16 +279,15 @@ into `dist/toolkit/harness/cli.js` by `npm run build`):
 
 ```
 AGNTDEV_BOT_MODULE=./src/index.ts      # module exporting makeBot()
-AGNTDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec (legacy) OR
-AGNTDEV_SPECS_GLOB=./tests/specs/*.json # per-feature pattern (task_manager)
+AGNTDEV_SPECS_FILE=./specs.json         # JSON array of BotSpec (legacy single-file) OR
+AGNTDEV_SPECS_GLOB=./tests/specs/*.json # per-feature pattern (whole_bot, canonical)
 AGNTDEV_COMMANDS_FILE=./commands.json   # string[] of declared commands (optional)
 AGNTDEV_GATE_NONCE=abc123               # nonce for verdict auth
 ```
 
-For `task_manager` projects, set `AGNTDEV_SPECS_GLOB` instead of
-`AGNTDEV_SPECS_FILE`. The harness globs the per-feature files and
-merges them at gate time. See section 6 below for the full per-feature
-pattern.
+For `whole_bot` projects, set `AGNTDEV_SPECS_GLOB` so the harness
+globs every per-feature `tests/specs/<slug>.json` and merges them
+at gate time. See section 6 below for the full per-feature pattern.
 
 ### Full example: booking bot specs
 
@@ -318,13 +332,13 @@ pattern.
 
 ---
 
-## 6. Per-feature spec files (task_manager projects)
+## 6. Per-feature spec files (whole_bot convention)
 
-`task_manager` projects (those with `build_pipeline=task_manager` — see
-[agnt-cli-builder](../agnt-cli-builder/SKILL.md) "What flow am I on?")
-organize their test specs as **one JSON file per feature task** in
-`tests/specs/<slug>.json`. The platform globs and merges them at gate
-time, so each file is independent.
+`whole_bot` projects organize their test specs as **one JSON
+file per feature** in `tests/specs/<slug>.json`, one per
+`src/handlers/<slug>.ts`. The
+platform globs and merges them at gate time, so each file is
+independent.
 
 ### File layout
 
@@ -357,14 +371,15 @@ above). Example `tests/specs/T02.json`:
 
 ### Why per-file (not one big specs.json)?
 
-- **No merge conflicts.** Multiple agents work on different features
-  in parallel; one spec file per feature means no shared-file gridlock.
-- **Per-task coverage.** The platform's gate maps each spec file to
-  the task slug in its filename. Coverage is checked per-task, not
-  globally — so failing the T03 specs doesn't block T02 from passing.
-- **Decompose-driven.** The `task_manager` decompose step writes one
-  spec file per feature task automatically. You can override or
-  extend them; you don't have to author from scratch.
+- **No merge conflicts.** Multiple agents (or future PRs) work on
+  different features in parallel; one spec file per feature means no
+  shared-file gridlock.
+- **Per-feature isolation.** The gate maps each spec file to the
+  feature slug in its filename. A failing `tests/specs/<slug>.json`
+  points directly at the handler that needs fixing.
+- **Hand-authored.** The bot-starter template ships the per-feature
+  dirs but the spec bodies are yours to write — match handler reply
+  text to `expect.payload.text` exactly.
 
 ### Writing a per-feature spec
 
@@ -375,20 +390,21 @@ match the task slug exactly (case-sensitive).
 
 ### When the gate runs
 
-When the platform runs the Tests stage for a `task_manager` project,
-it globs `tests/specs/*.json`, merges them into one in-memory array,
+When the platform runs the tests-gate at publish time (inline in the
+whole_bot build loop, after the completeness review converges), it
+globs `tests/specs/*.json`, merges them into one in-memory array,
 and runs the harness against the union. Per-spec GATE results are
-attributed back to the source file (so a failure on T02's specs
-shows up as "T02 spec failed" in the platform's review verdict).
+attributed back to the source file so a failure points at the
+handler that needs fixing.
 
-> **The gate is fail-closed (agnt-api PRs f1e942b + 03f55aa).** A missing
+> **The gate is fail-closed.** A missing
 > or unreadable per-feature spec file is a **hard** `GATE:<nonce>:{"ok":false,...,"error":"..."}`
 > — not a silent skip. Skipped specs (e.g. spec files the platform
 > can't fetch or parse) are surfaced in the verdict with a reason.
 > If the gate is failing on a "skipped" line, the fix is the spec file
 > itself, not the gate.
 
-If your project has BOTH legacy and task_manager tests (e.g. you're
+If your project has BOTH legacy and per-feature specs (e.g. you're
 migrating), the per-feature pattern takes precedence. The platform
 ignores a top-level `specs.json` if `tests/specs/*.json` exists.
 

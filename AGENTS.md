@@ -9,7 +9,7 @@ a self-contained skill consumable by an agent runtime that supports the
 ## Structure
 
 - `skills/agnt-cli-builder/` — meta-skill, builder's entry point
-- `skills/telegram-bot-{basics,sessions,ui,test-specs}/` — concept → grammY → toolkit
+- `skills/telegram-bot-*` — concept → grammY → toolkit (13 skills total)
 - `references/COMMANDS.md` (under `agnt-cli-builder/`) — auto-generated
   from the agnt-cli repo's oclif manifest. **Do not hand-edit.**
 
@@ -19,33 +19,74 @@ The `agnt-cli-builder/references/COMMANDS.md` file is auto-generated
 from the agnt-cli repo's oclif manifest. It is the source of truth for
 the command tree the skill teaches agents.
 
-After any change in agnt-cli commands, regen the file from the agnt-cli
-repo:
+**One-shot regen** (run from the agnt-cli repo root):
 
 ```sh
-# From the agnt-cli repo root:
+npm run build && npm run prepack && oclif readme --readme-path ../agntdev-skills/skills/agnt-cli-builder/references/COMMANDS.md
+```
+
+This builds the CLI, regenerates `oclif.manifest.json` (`prepack`
+runs `oclif manifest`), and emits the regen'd `COMMANDS.md` into
+the skills repo. **Never hand-edit `references/COMMANDS.md`** — hand-
+edits get clobbered on the next regen. The oclif-generated version
+is authoritative (aliases, source links, ordering, exit code notes
+all match the runtime).
+
+If you only need to regen against an already-built CLI:
+
+```sh
 npx oclif readme --readme-path ../agntdev-skills/skills/agnt-cli-builder/references/COMMANDS.md
 ```
 
-**Never hand-edit `references/COMMANDS.md`.** Hand-edits get clobbered
-on the next regen. The oclif-generated version is authoritative
-(aliases, source links, ordering, exit code notes all match the
-runtime). The only thing the skill author edits is the `SKILL.md`
-file in each skill — that one is hand-written.
-
 The corresponding note lives in `agnt-cli/AGENTS.md` so the CLI side
 also knows the regen command.
+
+**Note on credential examples.** The auto-generated `COMMANDS.md`
+currently shows `AGNT-XXXXX-XXXXX` and `amk_xxxx` as literal
+connect-code / token examples, because those literals are hardcoded
+in `agnt-cli/src/commands/connect.ts` and `login.ts`. A v0.18.0
+security fix replaced them with `<connect-code>` / `<agent-key>`
+placeholders in skill bodies, but the CLI source still has the
+literals — so they reappear every regen. The right fix is to
+update the CLI source itself (a future CLI cut); until then,
+expect this drift.
+
+**Version-narrative drift.** Likewise, `agnt-cli/src/commands/` may
+gain descriptions like `"Pipeline is whole_bot-only as of v0.X"`
+or similar version-narrative comments. These appear in the regen'd
+COMMANDS.md. Strip them from the CLI source descriptions so the
+regen stays clean — skill bodies are self-contained documentation;
+the repo-level changelog tracks that history.
 
 ## SKILL.md conventions
 
 - `name:` matches the directory name.
 - `description:` is a long string (multi-line YAML `>`). The first
-  sentence is the trigger; the rest is context.
+  sentence is the trigger; the rest is context. **Don't duplicate
+  the `Triggers:` clause** inside the same description value — it
+  gets folded once already, twice is dead text.
 - `Triggers:` block is a comma-separated list of phrases the agent
   runtime matches against user input.
 - `compatibility:` line documents required tools / env (Node version,
   gh CLI, network access).
+- `metadata:` block (added in v0.19.0): `version` (matches the skill
+  tag), `status` (`active` / `experimental` / `deprecated` /
+  `archived`), `author` (`agntdev`), `tags` (kebab-case slugs for
+  category filters), and `related_skills` (a list of sibling skill
+  names this one links to). Keep the metadata block small — it's
+  loaded into context at startup alongside `name` and `description`.
 - On Activation block: commands to run when the skill loads, before
   the user asks. Saves a round-trip.
 - Quick Reference block at the bottom: copy-pasteable command list.
   Keep it in sync with `references/COMMANDS.md`.
+- **No version-narrative inside the skill body.** Drop "cut in v0.X",
+  "removed in v0.X", "post-v0.X", `(agnt-api #N)`, `(PR #N)`,
+  commit hashes, etc. Skills are self-contained documentation; the
+  repo-level changelog tracks that history.
+- **No cloud-vs-local agent framing.** The build pipeline is one
+  thing: `whole_bot`. The agent reads the blueprint, builds per
+  the spec, ships a PR; the platform gates / reviews / publishes.
+  Don't teach `build_mode` branches, "what mode am I in?", or a
+  STOP gate for `platform_agent`. The CLI's JSON response still
+  exposes `build_mode` for backward compat, but the skill doesn't
+  teach it. (v0.19.0 cut deleted `references/build-modes.md`.)
