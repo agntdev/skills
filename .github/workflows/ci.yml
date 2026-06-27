@@ -15,13 +15,18 @@ jobs:
     name: Validate skills
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Uses thedaviddias/skill-check GitHub Action at the pinned
+    # v1.2.0 tag (NOT @v1 — no floating v1 tag exists on the repo
+    # yet, the Marketplace isn't published). The action.yml lives
+    # at the repo root, so the reference resolves cleanly.
+    #
+    # format: github → ::error / ::warning annotations on the PR diff.
+    # fail-on-warning: "false" (intentional, default) — warnings are
+    # quality-of-life signals (description.use_when_phrase, metadata
+    # array-as-string), not blockers for the skill loader.
     steps:
       - uses: actions/checkout@v4
-      - uses: thedaviddias/skill-check@v1
+      - uses: thedaviddias/skill-check@v1.2.0
         with:
           path: skills
           format: github
-        # By default skill-check exits non-zero only on errors.
-        # Warnings surface as ::warning annotations on the PR diff
-        # (format=github) but don't fail the build — fail-on-warning
-        # is intentionally NOT set. See AGENTS.md.
