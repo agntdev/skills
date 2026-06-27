@@ -22,6 +22,17 @@ metadata:
   related_skills:
     - telegram-test-advanced
     - telegram-bot-api-fundamentals
+license: MIT
+---
+
+# telegram-test-specs Skill
+
+How to write dialog test specs for a Telegram bot — why tokenless testing, how the harness works, and the spec format.
+
+> **Built for the agntdev pipeline.** The tests-gate is the
+> **objective publish gate** — every spec must pass for the bot to
+> publish. See [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for
+> the build loop and how the gate fits in.
 
 > **⚠️ Safety note — in-process bot execution.** This skill describes
 > running the bot's `makeBot()` **in-process** in the test harness so
@@ -36,17 +47,6 @@ metadata:
 > §4) authenticates the result to the publisher — treat the nonce
 > like a deploy secret: don't echo it into chat, don't log it to a
 > shared channel.
-license: MIT
----
-
-# telegram-test-specs Skill
-
-How to write dialog test specs for a Telegram bot — why tokenless testing, how the harness works, and the spec format.
-
-> **Built for the agntdev pipeline.** The tests-gate is the
-> **objective publish gate** — every spec must pass for the bot to
-> publish. See [agnt-cli-builder](../agnt-cli-builder/SKILL.md) for
-> the build loop and how the gate fits in.
 
 ---
 

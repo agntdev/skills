@@ -1,0 +1,43 @@
+{
+  "name": "@agntdev/skills",
+  "version": "0.19.2",
+  "description": "Agent skill bundle for the agntdev bot-building pipeline. Whole_bot build loop, Telegram Bot API patterns, UX rules, anti-patterns, test specs, deploy contract.",
+  "author": "AGNT <https://github.com/agntdev>",
+  "contributors": [
+    "Stanislav Smirnov <https://github.com/laontme>"
+  ],
+  "bugs": {
+    "url": "https://github.com/agntdev/skills/issues"
+  },
+  "devDependencies": {
+    "skill-check": "1.2.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "./LICENSE",
+    "./README.md",
+    "./AGENTS.md",
+    "./skills"
+  ],
+  "homepage": "https://github.com/agntdev/skills",
+  "keywords": [
+    "agntdev",
+    "skills",
+    "agentskills",
+    "telegram-bot",
+    "grammy",
+    "whole-bot"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agntdev/skills.git"
+  },
+  "scripts": {
+    "validate": "skill-check check skills --no-security-scan",
+    "report": "skill-check check skills --no-security-scan --format html --no-open"
+  }
+}

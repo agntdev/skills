@@ -10,10 +10,11 @@ description: >
   telegram-bot-ui, telegram-bot-ux-rules), or the deploy/runtime
   contract (see telegram-bot-deploy).
   Triggers: connect code, build the bot, ship the bot, agnt project show, agnt project blueprint, gh pr create, gh pr list, npm test, npm ci, npm run build, agnt whoami, agnt connect, agnt login, agnt bot show, agnt bot logs, agnt project rebuild.
-compatibility: Requires Node.js 18+, gh CLI, and network access to the
-agnt platform API (base URL via `AGNT_API_BASE`, default set by the
-install). Auth optional — required only for the write command
-(`project rebuild`).
+compatibility: >
+  Requires Node.js 18+, gh CLI, and network access to the agnt
+  platform API (base URL via `AGNT_API_BASE`, default set by the
+  install). Auth optional — required only for the write command
+  (`project rebuild`).
 license: MIT
 metadata:
   version: "0.19.0"
@@ -144,7 +145,7 @@ agnt project show <slug>   # status + repo URL + build_progress
 - **[references/pass-loop.md](./references/pass-loop.md)** —
   pre-merge build gate → auto-merge → completeness review → tests-gate
   → published. Pass statuses and what counts toward the cap.
-- **[references/REFERENCE.md](./REFERENCE.md)** — pass cap and rebuild,
+- **[references/REFERENCE.md](./references/REFERENCE.md)** — pass cap and rebuild,
   Ship an update, exit codes, env vars.
 
 ## Open the PR
@@ -253,7 +254,7 @@ agnt project rebuild <slug> --yes                # retry a failed whole_bot
 ## Reference
 
 - [references/COMMANDS.md](./references/COMMANDS.md) — full command reference (auto-generated)
-- [references/REFERENCE.md](./REFERENCE.md) — pass cap + Ship-an-update, exit codes, env vars, auth model
+- [references/REFERENCE.md](./references/REFERENCE.md) — pass cap + Ship-an-update, exit codes, env vars, auth model
 - [references/auth-model.md](./references/auth-model.md) — connect codes, login, keyring
 - [references/blueprint-contract.md](./references/blueprint-contract.md) — `docs/blueprint.md` fields
 - [references/pass-loop.md](./references/pass-loop.md) — build gate → review → tests-gate → published

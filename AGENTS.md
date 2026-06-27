@@ -12,6 +12,8 @@ a self-contained skill consumable by an agent runtime that supports the
 - `skills/telegram-bot-*` — concept → grammY → toolkit (13 skills total)
 - `references/COMMANDS.md` (under `agnt-cli-builder/`) — auto-generated
   from the agnt-cli repo's oclif manifest. **Do not hand-edit.**
+- `package.json` — npm metadata; pins `skill-check` as the validator.
+  No `scripts/` directory; validation is delegated to the npm package.
 
 ## Regenerating the COMMANDS.md reference
 
@@ -71,7 +73,8 @@ the repo-level changelog tracks that history.
   string, not the raw source lines. Keep description terse
   (trigger phrases + `USE FOR` / `DO NOT USE FOR` + `Triggers:`)
   and put verbose context in a body section after the frontmatter.
-  The validator (`scripts/validate-skills.mjs`) catches this.
+  The validator (`skill-check`) catches this — `frontmatter.description_required`
+  with the 1024-char hard cap.
 - `Triggers:` block is a comma-separated list of phrases the agent
   runtime matches against user input.
 - `compatibility:` line documents required tools / env (Node version,
@@ -97,3 +100,24 @@ the repo-level changelog tracks that history.
   STOP gate for `platform_agent`. The CLI's JSON response still
   exposes `build_mode` for backward compat, but the skill doesn't
   teach it. (v0.19.0 cut deleted `references/build-modes.md`.)
+
+## Validator
+
+`skill-check` (npm: `skill-check@1.2.0`,
+[github](https://github.com/thedaviddias/skill-check)) is the
+agentskills.io-spec linter. It validates frontmatter strictly
+(real YAML parser), enforces the spec's name / description /
+license / metadata rules, checks body line count, resolves
+cross-references, and scores skills 0–100. We use it directly;
+no homegrown shim.
+
+```sh
+npm install                # once per checkout (Node 24+, matches agnt-cli)
+npm run validate           # skill-check check skills --no-security-scan
+npm run report             # same check + --format html --no-open
+```
+
+**CI** (`.github/workflows/ci.yml`) uses the
+`thedaviddias/skill-check@v1` action with `format: github`. Inline
+annotations on the PR diff; errors fail the build, warnings
+don't (intentionally — `--fail-on-warning` is NOT set).

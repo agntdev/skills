@@ -1,4 +1,4 @@
-name: CI
+name: skill-check
 
 on:
   push:
@@ -11,15 +11,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate-skills:
+  validate:
     name: Validate skills
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
-      # Pure-Node validator — uses only built-in modules (fs, path, url)
-      # so no Node setup or package install needed. The runner ships
-      # with Node 20+ by default. Catches broken frontmatter /
-      # cross-references / forbidden skill names before any agent ever
-      # loads a malformed skill.
-      - run: node scripts/validate-skills.mjs
+      - uses: actions/checkout@v4
+      - uses: thedaviddias/skill-check@v1
+        with:
+          path: skills
+          format: github
+        # By default skill-check exits non-zero only on errors.
+        # Warnings surface as ::warning annotations on the PR diff
+        # (format=github) but don't fail the build — fail-on-warning
+        # is intentionally NOT set. See AGENTS.md.

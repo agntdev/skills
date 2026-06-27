@@ -8,6 +8,73 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.19.2 (2026-06-27) — fix broken YAML frontmatter + adopt `skill-check` linter
+
+**PATCH.** v0.19.1 shipped two skills with malformed YAML frontmatter
+that PyYAML rejected at parse time, so `npx skills add
+agntdev/skills --skill <name>` silently failed for those skills.
+The homegrown validator missed both bugs because its frontmatter
+parser was too lenient (folded scalars joined by indentation, no
+real YAML parse).
+
+```
+$ npx skills add agntdev/skills --skill agnt-cli-builder
+...
+  Found 11 skills
+  No matching skills found for: agnt-cli-builder
+Error in user YAML: (<unknown>): could not find expected ':' while
+scanning a simple key at line 13 column 1
+```
+
+The bug was a missing indent on the `compatibility:` value's
+continuation line. PyYAML reads the `agnt platform API ...`
+line at column 0 as a new top-level key, finds no colon, and
+bails. The homegrown validator's folded-scalar heuristic just
+collected indented lines and never noticed.
+
+**Real bugs fixed:**
+
+| Skill | Bug | Fix |
+| --- | --- | --- |
+| `agnt-cli-builder/SKILL.md` | `compatibility:` value spanned 3 lines with line 2 at column 0 (broken YAML) | Wrapped value in `> ` folded scalar with proper indentation |
+| `agnt-cli-builder/SKILL.md` | 2× broken local links `./REFERENCE.md` (file lives at `./references/REFERENCE.md`) | Fixed path to `./references/REFERENCE.md` |
+| `telegram-test-specs/SKILL.md` | Markdown block quote `> Safety note …` was inside the YAML frontmatter (between `metadata` and `license`), breaking the parse | Moved the safety note into the body, after the closing `---` |
+| `telegram-bot-ui/SKILL.md` | Body 547 lines exceeded the agentskills.io 500-line soft cap (`skill-check body.max_lines` error) | Extracted §2 "grammY — Using Keyboards" (208 lines) to `references/grammY-keyboards.md`, left a pointer in the body |
+| 9× SKILL.md files | Missing trailing newline | Added single trailing `\n` |
+
+**Validator swap to `skill-check`.** Replaced the vibecoded
+homegrown `scripts/validate-skills.mjs` with
+[`skill-check@1.2.0`](https://www.npmjs.com/package/skill-check)
+by thedaviddias — the agentskills.io-spec linter. It validates
+frontmatter strictly (real YAML parser), enforces the spec's
+name / description / license / metadata rules, checks body line
+count, resolves cross-references, and scores skills 0–100.
+**No shim** — skill-check is called directly.
+
+- `package.json` pins `skill-check@1.2.0` as a devDependency.
+- `npm run validate` → `skill-check check skills --no-security-scan`.
+- `npm run report` → same check with `--format html --no-open`
+  for an HTML report.
+- `scripts/` directory deleted; the homegrown `validate-skills.mjs`
+  shim is gone.
+- `.github/workflows/ci.yml` uses the
+  [`thedaviddias/skill-check@v1`](https://github.com/thedaviddias/skill-check)
+  action with `format: github`. Inline `::error` / `::warning`
+  annotations on the PR diff. Errors fail the build; warnings
+  intentionally do NOT (`--fail-on-warning` not set) — they're
+  quality-of-life signals (e.g. `description.use_when_phrase`,
+  metadata-array-as-string), not blockers for the skill loader.
+- `node_modules/` + `package-lock.json` gitignored.
+
+Mirrors the `agnt-cli` shape: Node 24+, pinned devDep, npm scripts
+for validation. The validators were always going to drift unless
+they were someone else's code that's actually maintained —
+skill-check is published to npm and tracks the spec.
+
+**No CLI changes.** `@agntdev/cli@0.19.0` ships as-is.
+
+**Pair:** `@agntdev/cli@0.19.0` + `v0.19.2` skills.
+
 ## v0.19.1 (2026-06-27) — trim descriptions under Anthropic's 1024-char loader cap
 
 **PATCH.** v0.19.0 shipped six skills with `description:` fields over
