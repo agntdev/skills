@@ -1,30 +1,18 @@
 ---
 name: telegram-bot-ux-rules
 description: >
-  Shape the strings and timings a Telegram bot shows the user.
-  Covers microcopy rules for button labels and message bodies
-  (sentence case, ≤24 chars/button, ≤6 lines/hero, empty-state
-  always exists), error UX rules (don't leak err.message or
-  err.stack, say what went wrong + suggest the next step, don't
-  apologize repeatedly), loading UX rules (<500ms do nothing,
-  500ms–3s sendChatAction("typing"), 3s+ placeholder +
-  editMessageText, LLM flows use sendRichMessageDraft), media UX
-  decision tree (sendPhoto vs sendDocument, captions ≤1024 chars,
-  has_spoiler, sendPaidMedia), chat-type UX (private is easy,
-  group privacy mode is the silent killer, supergroup Topics need
-  message_thread_id, channels are admin-only broadcast), and the
-  performance budgets that users actually feel (300ms tap-to-edit,
-  ≤30 edits/min, ≤5 rows iOS, ≤4 cols Desktop). USE FOR: microcopy,
-  button label, error message, loading state, sendChatAction,
-  typing indicator, has_spoiler, sendPhoto, privacy mode,
-  can_read_all_group_messages, message_thread_id, performance
-  budget, throttle, edits per minute, bot copy, error UX, loading
-  UX — even if the user doesn't say "UX" or "error" explicitly.
-  DO NOT USE FOR: flow patterns (see telegram-bot-flow-patterns),
-  onboarding / Mini App graduation (see telegram-bot-onboarding),
-  anti-patterns checklist (see telegram-bot-anti-patterns), or
-  keyboard wiring mechanics (see telegram-bot-ui).
-  Triggers: microcopy, button label, error message, loading state, sendChatAction, typing indicator, has_spoiler, sendPhoto, privacy mode, can_read_all_group_messages, message_thread_id, performance budget, throttle, edits per minute, bot copy, error UX, loading UX.
+  Shape the strings and timings a Telegram bot shows the user
+  (microcopy, error UX, loading UX, media UX, chat-type UX,
+  performance budgets). USE FOR: microcopy, button label, error
+  message, loading state, sendChatAction, typing indicator,
+  has_spoiler, sendPhoto, privacy mode, message_thread_id,
+  performance budget, throttle, edits per minute, bot copy,
+  error UX, loading UX — even if the user doesn't say "UX" or
+  "error" explicitly. DO NOT USE FOR: flow patterns (see
+  telegram-bot-flow-patterns), onboarding (see
+  telegram-bot-onboarding), anti-patterns (see
+  telegram-bot-anti-patterns), keyboard wiring (see telegram-bot-ui).
+  Triggers: microcopy, button label, error message, loading state, sendChatAction, typing indicator, has_spoiler, sendPhoto, privacy mode, message_thread_id, performance budget, throttle, edits per minute, bot copy, error UX, loading UX.
 compatibility: works with grammY + agntdev toolkit sessions.
 license: MIT
 metadata:

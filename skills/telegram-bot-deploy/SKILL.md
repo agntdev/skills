@@ -3,21 +3,21 @@ name: telegram-bot-deploy
 description: >
   Make an agntdev bot repo deployable, debug why a deployed bot
   won't start, or decide what build/deploy files to commit. Covers
-  the build contract (dist/index.js, build script, Node 20), the
-  runtime contract (BOT_TOKEN vs BOT_TOKEN_FILE resolution, long
-  polling only, Redis state via REDIS_URL, no webhook / no health
-  port), the platform's deploy engines (Fly.io + VPS compose), and
-  the inlined toolkit pattern (no .npmrc, no @agntdev/* deps). USE
-  FOR: deploy bot, production ready, deploy pipeline, entry point,
-  dist/index.js, dist/main.js, BOT_TOKEN_FILE, REDIS_URL, redis,
-  session storage, Dockerfile, fly.io, docker compose, VPS, bot
-  container, container_state, bot won't start, crash loop, bot
-  starter template, inlined toolkit, src/toolkit/, agnt bot logs.
-  DO NOT USE FOR: the Bot API foundation (see
-  telegram-bot-api-fundamentals), session persistence details (see
-  telegram-bot-sessions), or session FSM patterns (see
-  telegram-bot-flow-patterns).
-  Triggers: deploy bot, production ready, deploy pipeline, entry point, dist/index.js, dist/main.js, BOT_TOKEN_FILE, REDIS_URL, redis, session storage, Dockerfile, fly.io, docker compose, VPS, bot container, container_state, bot won't start, crash loop, bot starter template, inlined toolkit, src/toolkit/, agnt bot logs.
+  the build contract (dist/index.js, Node 20), the runtime
+  contract (BOT_TOKEN vs BOT_TOKEN_FILE, Redis state, no webhook
+  / no health port), and the inlined toolkit pattern. USE FOR:
+  deploy bot, dist/index.js, BOT_TOKEN_FILE, REDIS_URL,
+  Dockerfile, fly.io, docker compose, VPS, container_state, bot
+  won't start, crash loop, bot starter template, inlined toolkit,
+  agnt bot logs — even if the user doesn't say "deploy" or
+  "Docker" explicitly. DO NOT USE FOR: Bot API foundation (see
+  telegram-bot-api-fundamentals), session persistence (see
+  telegram-bot-sessions), session FSM patterns (see
+  telegram-bot-flow-patterns). Triggers: deploy bot, production
+  ready, deploy pipeline, BOT_TOKEN_FILE, REDIS_URL, redis,
+  Dockerfile, fly.io, docker compose, VPS, bot container,
+  container_state, bot won't start, crash loop, inlined toolkit,
+  agnt bot logs.
 compatibility: Node 20+, npm. No deploy credentials needed — the platform builds and deploys for you, and the bot-starter template has the toolkit inlined so no registry auth is required.
 license: MIT
 metadata:

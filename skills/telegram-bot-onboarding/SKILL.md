@@ -2,21 +2,19 @@
 name: telegram-bot-onboarding
 description: >
   Design a Telegram bot's first 30–60 seconds with a user. Covers
-  the /start hero message and menu wiring (3–5 buttons max, one
-  primary CTA + one secondary + one help escape), the /help command
-  pattern, empty-state copy for first-run features, easy-exit +
-  frequency caps + quiet hours for follow-up sequences, and the
-  decision tree for graduating from inline keyboards to a Telegram
-  Mini App (>50 items with re-sorts, multi-select with Apply,
-  compliance audit trail required, >4 KB payload). USE FOR:
-  onboarding, /start hero, first-run, empty state, /help,
-  follow-up, frequency cap, quiet hours, Mini App graduation,
-  web_app button, welcome flow, new user flow — even if the user
+  /start hero and menu wiring, /help pattern, empty-state copy
+  for first-run features, follow-up sequences (easy-exit,
+  frequency caps, quiet hours), and the decision tree for
+  graduating to a Telegram Mini App. USE FOR: onboarding,
+  /start hero, first-run, empty state, /help, follow-up,
+  frequency cap, quiet hours, Mini App graduation, web_app
+  button, welcome flow, new user flow — even if the user
   doesn't say "onboarding" or "Mini App" explicitly. DO NOT USE
-  FOR: button wiring mechanics (see telegram-bot-ui), flow patterns
-  (see telegram-bot-flow-patterns), or microcopy rules (see
-  telegram-bot-ux-rules).
-  Triggers: onboarding, /start hero, first-run, empty state, /help, follow-up, frequency cap, quiet hours, Mini App graduation, web_app button, welcome flow, new user flow.
+  FOR: button wiring (see telegram-bot-ui), flow patterns (see
+  telegram-bot-flow-patterns), microcopy rules (see
+  telegram-bot-ux-rules). Triggers: onboarding, /start hero,
+  first-run, empty state, /help, follow-up, frequency cap, quiet
+  hours, Mini App graduation, web_app button, welcome flow, new user flow.
 compatibility: Works with grammY + the inlined toolkit's main-menu
   helpers (registerMainMenuItem) from src/toolkit/ui/.
 license: MIT

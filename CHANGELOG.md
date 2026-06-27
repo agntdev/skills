@@ -8,6 +8,54 @@ The skill bundle is not yet versioned in the npm sense. We tag the
 git repo (`v0.14.3`, `v0.14.2`, `v0.14.1`, ...) and document tag-scoped
 install in the README. This file records what's in each tag.
 
+## v0.19.1 (2026-06-27) — trim descriptions under Anthropic's 1024-char loader cap
+
+**PATCH.** v0.19.0 shipped six skills with `description:` fields over
+the Anthropic skill-loader's 1024-character hard cap. Agents loading
+the bundle reported:
+
+```
+[Skill conflicts]
+  description exceeds 1024 characters (1229)  telegram-bot-api-fundamentals
+  description exceeds 1024 characters (1560)  telegram-bot-api-rich-messages
+  description exceeds 1024 characters (1273)  telegram-bot-deploy
+  description exceeds 1024 characters (1162)  telegram-bot-flow-patterns
+  description exceeds 1024 characters (1059)  telegram-bot-onboarding
+  description exceeds 1024 characters (1665)  telegram-bot-ux-rules
+```
+
+The loader rejects the entire skill at install time, not just the
+oversized field. Pushy descriptions grew because we kept the verbose
+"Covers X, Y, Z with details" list inline — that detail belongs in
+the body, not the loader-visible description.
+
+**Trimmed descriptions (all now ≤ 1024 chars):**
+
+| Skill | Before | After |
+|---|---:|---:|
+| telegram-bot-api-fundamentals | 1228 | 1009 |
+| telegram-bot-api-rich-messages | 1559 | 856 |
+| telegram-bot-deploy | 1272 | 966 |
+| telegram-bot-flow-patterns | 1161 | 983 |
+| telegram-bot-onboarding | 1058 | 827 |
+| telegram-bot-ux-rules | 1664 | 861 |
+
+Pattern: keep `USE FOR` / `DO NOT USE FOR` / `Triggers:` clauses
+(those are the loader-relevant bits), collapse the "Covers X, Y, Z"
+list into a one-line topic sentence. The detail is still in the body
+sections (§1 Microcopy, §2 Error UX, etc.) — agents that load the
+skill still see it; agents that match on description get a terser
+trigger.
+
+**Validator extension:** `scripts/validate-skills.mjs` now checks
+`description.length > 1024` against the joined folded-scalar value.
+Caught all six on the first run after the cut. AGENTS.md documents
+the cap.
+
+**No CLI changes.** `@agntdev/cli` is unchanged at v0.19.0.
+
+**Pair:** `@agntdev/cli@0.19.0` + `v0.19.1` skills.
+
 ## v0.19.0 (2026-06-27) — split skills bundle 8→13 + metadata + pushy descriptions + drop CLI chat/build-mode/pause/feedback + drop build-modes framing
 
 **MINOR** cut, paired with `@agntdev/cli@0.19.0`. The CLI drops

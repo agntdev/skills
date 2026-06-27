@@ -1,23 +1,21 @@
 ---
 name: telegram-bot-api-fundamentals
 description: >
-  Wire up the Telegram Bot API foundation. Covers how the HTTP client
-  works (long polling vs webhook), how grammY wraps it (Bot instance,
-  ctx, command routing, callback queries, middleware, error boundary),
-  the agntdev inlined toolkit (`src/toolkit/`, `createBot`, `makeBot`
-  factory, BotContext type), and the hard limits you will hit
-  (callback_data 64 BYTES, message 4096 chars, etc.). Also covers
-  parse_mode (HTML default, MarkdownV2 18-char escape) and message
-  entities (bold/italic/underline/spoiler/blockquote/code/pre/link).
-  USE FOR: building a Telegram bot, grammY bot, bot entry point, bot
-  token, long polling, webhook, callback_data limit, parse_mode, HTML,
-  MarkdownV2, message entity, createBot, makeBot, ctx.reply, Bot
-  API limits, HTTP polling vs webhook. DO NOT USE FOR: Rich Messages
-  / Checklists / chat types / media types (see
-  telegram-bot-api-rich-messages), keyboard wiring mechanics (see
-  telegram-bot-ui), or UX rules like microcopy and error handling
-  (see telegram-bot-ux-rules).
-  Triggers: build telegram bot, grammY bot, bot entry point, bot token, long polling, webhook, callback_data limit, parse_mode, HTML, MarkdownV2, message entity, createBot, makeBot, ctx.reply, Bot API limits, HTTP polling vs webhook.
+  Wire up the Telegram Bot API foundation. Covers how the HTTP
+  client works (long polling vs webhook), how grammY wraps it
+  (Bot instance, ctx, command routing, callback queries,
+  middleware), the agntdev inlined toolkit (createBot / makeBot),
+  the hard limits (callback_data 64 BYTES, message 4096 chars),
+  parse_mode (HTML default, MarkdownV2 escape), and message
+  entities. USE FOR: building a Telegram bot, grammY bot, bot
+  entry point, bot token, long polling, webhook, callback_data
+  limit, parse_mode, HTML, MarkdownV2, message entity, createBot,
+  makeBot, Bot API limits — even if the user doesn't say "inline"
+  or "keyboard" explicitly. DO NOT USE FOR: Rich Messages /
+  Checklists / chat types / media (see
+  telegram-bot-api-rich-messages), keyboard wiring (see
+  telegram-bot-ui), UX rules (see telegram-bot-ux-rules).
+  Triggers: build telegram bot, grammY bot, bot entry point, bot token, long polling, webhook, callback_data limit, parse_mode, HTML, MarkdownV2, message entity, createBot, makeBot, Bot API limits.
 compatibility: Works with grammY alone, or the inlined toolkit for
   testable bots. Targets Bot API 10.1 (June 11 2026).
 license: MIT

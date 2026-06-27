@@ -1,27 +1,17 @@
 ---
 name: telegram-bot-api-rich-messages
 description: >
-  Go beyond plain text in a Telegram bot. Covers Rich Messages (Bot
-  API 10.1) with section headings, dividers, footers, tables,
-  expandable details, embedded media blocks, and streaming AI replies
-  via sendRichMessageDraft. Also covers Checklists (Bot API 9.1), the
-  chat types matrix (private / group / supergroup / channel with
-  privacy mode and Topics), inline button types (callback_data, url,
-  switch_inline_query, web_app, copy_text, login_url, pay), media
-  types (sendPhoto, sendDocument, sendVideo, sendVoice, sendPaidMedia
-  for Stars-gated media), and the webhook contract (file size limits,
-  HTTPS ports, max connections). USE FOR: rich message, rich_text,
-  sendRichMessage, sendRichMessageDraft, streaming AI, checklist,
-  sendChecklist, chat type matrix, private group channel, privacy
-  mode, topics, message_thread_id, inline button, web_app button,
-  copy_text, sendPhoto, sendDocument, sendVoice, sendPaidMedia,
-  webhook, getUpdates, Mini App, Telegram Mini App — even if the
-  user doesn't say "rich" or "Telegram" explicitly. DO NOT USE FOR:
-  the HTTP / grammY / toolkit foundation (see
-  telegram-bot-api-fundamentals), keyboard wiring mechanics (see
-  telegram-bot-ui), or UX rules like microcopy (see
-  telegram-bot-ux-rules).
-  Triggers: rich message, rich_text, sendRichMessage, sendRichMessageDraft, streaming AI, checklist, sendChecklist, chat type matrix, private group channel, privacy mode, topics, message_thread_id, inline button, web_app button, copy_text, sendPhoto, sendDocument, sendVoice, sendPaidMedia, webhook, getUpdates, Mini App, Telegram Mini App.
+  Go beyond plain text in a Telegram bot. Covers Rich Messages
+  (Bot API 10.1), Checklists (Bot API 9.1), chat types, inline
+  button types, media types, and the webhook contract. USE FOR:
+  rich message, sendRichMessage, sendRichMessageDraft, streaming
+  AI, checklist, chat types, message_thread_id, inline button,
+  web_app button, copy_text, sendPhoto, sendDocument, sendPaidMedia,
+  webhook, Mini App — even if the user doesn't say "rich" or
+  "Telegram" explicitly. DO NOT USE FOR: HTTP / grammY / toolkit
+  foundation (see telegram-bot-api-fundamentals), keyboard wiring
+  (see telegram-bot-ui), UX rules (see telegram-bot-ux-rules).
+  Triggers: rich message, sendRichMessage, sendRichMessageDraft, streaming AI, checklist, sendChecklist, chat types, message_thread_id, inline button, web_app button, copy_text, sendPhoto, sendDocument, sendPaidMedia, webhook, Mini App.
 compatibility: Works with grammY + Bot API 10.1 (June 11 2026) and
   9.1 (Checklists). Targets the inlined toolkit at src/toolkit/ in
   the bot-starter template.

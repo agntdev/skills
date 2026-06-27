@@ -12,6 +12,9 @@
 //      compatibility/license
 //   3. `name` matches the parent directory name
 //   4. `description` is non-empty and contains a `Triggers:` line
+//   4a. `description` joined (folded scalar included) is at most
+//       MAX_DESCRIPTION_CHARS characters — the Anthropic skill loader
+//       rejects descriptions over this cap at load time
 //   5. Any path-looking reference (`./refs/foo.md`, `references/...`)
 //      inside SKILL.md resolves to a real file under the skill dir
 //   6. `references/` (if present) is a directory, not a file
@@ -33,6 +36,12 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
 const SKILLS_DIR = join(ROOT, "skills");
 const FORBIDDEN_NAMES = new Set(["agnt-cli-creator"]);
+// Anthropic skill-loader hard cap on the `description` field (joined
+// value — folded/literal block scalars fold to a single string).
+// Source: platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+// Exceeding this rejects the skill at install time with no graceful
+// fallback — measure the joined string, not the raw source lines.
+const MAX_DESCRIPTION_CHARS = 1024;
 const KNOWN_LICENSES = new Set([
   "MIT",
   "Apache-2.0",
@@ -144,6 +153,17 @@ for (const skillDir of walk(SKILLS_DIR)) {
     err(
       dirName,
       `description should include a "Triggers:" line so agent prompt-matchers can find this skill`,
+    );
+  }
+
+  // Anthropic skill-loader hard cap. The folded scalar in
+  // `description: >` joins lines with single spaces — measure the
+  // joined value, not the raw source. (The parseFrontmatter above
+  // already does the fold, so `fm.description` is the joined string.)
+  if (fm.description && fm.description.length > MAX_DESCRIPTION_CHARS) {
+    err(
+      dirName,
+      `description is ${fm.description.length} chars (limit ${MAX_DESCRIPTION_CHARS}) — agent loaders reject at install time. Move detail into a "When to use this skill" body section; keep description terse (trigger phrases + USE/DO NOT USE FOR + Triggers).`,
     );
   }
 

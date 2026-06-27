@@ -2,22 +2,22 @@
 name: telegram-bot-flow-patterns
 description: >
   Implement a multi-step Telegram bot conversation. Covers five
-  session-FSM primitives (typed step enum, cancel from any step,
-  per-step handler with input filter, flow-timeout sweeper,
-  back/undo button) and seven reusable patterns: linear wizard,
-  branching menu, search-then-pick, multi-step form with
-  back-stack, undo for destructive actions, native checklist flow,
-  rich message flow, streaming AI flow. No FSM library — flows use
-  ctx.session.step. USE FOR: flow pattern, wizard, branching menu,
+  session-FSM primitives (typed step enum, cancel, per-step
+  handler, flow-timeout sweeper, back/undo) and seven reusable
+  patterns (linear wizard, branching menu, search-then-pick,
+  multi-step form, undo, checklist flow, rich message flow,
+  streaming AI). USE FOR: flow pattern, wizard, branching menu,
   search-then-pick, multi-step form, undo, checklist flow, rich
-  message flow, streaming AI, FSM, session step, ctx.session.step,
-  multi-step conversation, bot flow design — even if the user
-  doesn't say "flow" or "FSM" explicitly. DO NOT USE FOR: button
-  wiring (see telegram-bot-ui), the Bot API foundation (see
-  telegram-bot-api-fundamentals), session persistence details (see
-  telegram-bot-sessions), or microcopy / error UX (see
-  telegram-bot-ux-rules).
-  Triggers: flow pattern, wizard, branching menu, search-then-pick, multi-step form, undo, checklist flow, rich message flow, streaming AI, FSM, session step, ctx.session.step, multi-step conversation, bot flow design.
+  message flow, streaming AI, FSM, ctx.session.step, multi-step
+  conversation, bot flow design — even if the user doesn't say
+  "flow" or "FSM" explicitly. DO NOT USE FOR: button wiring (see
+  telegram-bot-ui), Bot API foundation (see
+  telegram-bot-api-fundamentals), session persistence (see
+  telegram-bot-sessions), microcopy / error UX (see
+  telegram-bot-ux-rules). Triggers: flow pattern, wizard,
+  branching menu, search-then-pick, multi-step form, undo,
+  checklist flow, rich message flow, streaming AI, FSM,
+  ctx.session.step, multi-step conversation, bot flow design.
 compatibility: Works with grammY + agntdev toolkit sessions. No FSM
   library — flows use ctx.session.step from the per-feature handler
   in src/handlers/<slug>.ts.

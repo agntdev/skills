@@ -65,6 +65,13 @@ the repo-level changelog tracks that history.
   sentence is the trigger; the rest is context. **Don't duplicate
   the `Triggers:` clause** inside the same description value — it
   gets folded once already, twice is dead text.
+- **Description hard cap: 1024 characters** (joined folded scalar).
+  The Anthropic skill loader rejects descriptions over this cap at
+  install time with no graceful fallback — measure the joined
+  string, not the raw source lines. Keep description terse
+  (trigger phrases + `USE FOR` / `DO NOT USE FOR` + `Triggers:`)
+  and put verbose context in a body section after the frontmatter.
+  The validator (`scripts/validate-skills.mjs`) catches this.
 - `Triggers:` block is a comma-separated list of phrases the agent
   runtime matches against user input.
 - `compatibility:` line documents required tools / env (Node version,
