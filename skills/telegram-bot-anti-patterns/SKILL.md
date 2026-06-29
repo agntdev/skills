@@ -1,7 +1,7 @@
 ---
 name: telegram-bot-anti-patterns
 description: >
-  Final review pass before shipping a Telegram bot. Covers the 20
+  Final review pass before shipping a Telegram bot. Covers the 21
   most common ways bots get rejected by the completeness review or
   fail UX review. Each anti-pattern is one file under references/
   (read individually when you suspect you might be doing it). Also
@@ -32,7 +32,7 @@ metadata:
 
 # telegram-bot-anti-patterns Skill
 
-The final review pass before shipping a Telegram bot — 20 anti-patterns (each one its own file under `references/`) plus a 21-item UX review checklist. For the rules these anti-patterns break, see [telegram-bot-ux-rules](../telegram-bot-ux-rules/SKILL.md). For flow patterns, see [telegram-bot-flow-patterns](../telegram-bot-flow-patterns/SKILL.md).
+The final review pass before shipping a Telegram bot — 21 anti-patterns (each one its own file under `references/`) plus a 21-item UX review checklist. For the rules these anti-patterns break, see [telegram-bot-ux-rules](../telegram-bot-ux-rules/SKILL.md). For flow patterns, see [telegram-bot-flow-patterns](../telegram-bot-flow-patterns/SKILL.md).
 
 > **Built for the agntdev pipeline.** Run through the checklist in
 > [references/ux-review-checklist.md](./references/ux-review-checklist.md)
@@ -66,6 +66,7 @@ Each entry is one file under `references/`. Read individually when you suspect y
 | 18 | `getUpdates` polling without backoff | Tight loop hammers the API | [18-polling-without-backoff.md](./references/18-polling-without-backoff.md) |
 | 19 | "Reply /cancel to stop" without a `/cancel` handler | Dead instruction | [19-cancel-instruction-without-handler.md](./references/19-cancel-instruction-without-handler.md) |
 | 20 | Sending media >20MB on official API | Webhook delivery fails | [20-media-over-webhook-limit.md](./references/20-media-over-webhook-limit.md) |
+| 21 | DM a user by their Telegram ID (no invite flow) | Bot can't reach members (403) | [21-dm-user-by-id.md](./references/21-dm-user-by-id.md) |
 
 ---
 
